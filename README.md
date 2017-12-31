@@ -8,3 +8,5 @@ Compile the src directory with JDK8 - the only dependency is JUnit and that's op
 # Running
 Once compiled run as
 > java -cp bin chess.Chess
+
+You might want to use an UTF-8 console.
