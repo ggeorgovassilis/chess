@@ -10,7 +10,10 @@ public class UnknownCommand extends Command{
 	
 	@Override
 	public void execute() {
-		console.println("Unknown command");
+		console.println("Example of valid commands:");
+		console.println("b2b4");
+		console.println("?b2");
+		console.println("q");
 	}
 
 }

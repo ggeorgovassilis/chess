@@ -82,8 +82,9 @@ public class Validations {
 		// move forward to empty square is ok
 		if (vm.getTo() == oneStepForward && board.getPieceAt(vm.getTo()) == null)
 			return;
-		// two steps forward from baseline to empty square is ok
-		if (vm.getTo() == twoStepsForward && vm.getFrom() == pawnBaseLine && board.getPieceAt(vm.getTo()) == null)
+		// two steps forward from baseline to empty square is ok if first step is also
+		// empty
+		if (vm.getTo() == twoStepsForward && vm.getFrom() == pawnBaseLine && board.getPieceAt(vm.getTo()) == null && board.getPieceAt(oneStepForward) == null)
 			return;
 		// a side move is ok if there is a piece to capture;
 		if ((vm.getTo() == captureMoveLeft || vm.getTo() == captureMoveRight) && vm.getCapturedPiece() != null)
