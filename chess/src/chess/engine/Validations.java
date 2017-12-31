@@ -2,13 +2,23 @@ package chess.engine;
 
 import chess.model.Board;
 import chess.model.IllegalMove;
+import chess.model.King;
 import chess.model.Knight;
 import chess.model.Pawn;
 import chess.model.Piece;
 import chess.model.Position;
+import chess.model.Queen;
 import chess.model.Rook;
 import chess.model.Piece.Colour;
 import static chess.model.Position.*;
+
+import java.util.function.BiConsumer;
+import java.util.function.BiPredicate;
+import java.util.function.IntBinaryOperator;
+import java.util.function.IntSupplier;
+import java.util.function.ToIntFunction;
+
+import chess.model.Bishop;
 
 public class Validations {
 
@@ -81,12 +91,25 @@ public class Validations {
 		throw new IllegalMove("This is not a valid pawn move", vm);
 	}
 
-	public void validateRookMove(ValidatedMove vm) {
-		Board board = vm.getBoard();
-		if (!(vm.getMovingPiece() instanceof Rook))
-			throw new IllegalMove("Piece is not a rook", vm);
+	public void validateKnightMove(ValidatedMove vm) {
+		if (!(vm.getMovingPiece() instanceof Knight))
+			throw new IllegalMove("Piece is not a knight", vm);
 		int dRow = vm.getTo().row - vm.getFrom().row;
 		int dCol = vm.getTo().column - vm.getFrom().column;
+		if (Math.abs(dRow * dCol) != 2)
+			throw new IllegalMove("This is not a valid knight move", vm);
+	}
+
+	protected void validateContinuousMove(ValidatedMove vm, Class<? extends Piece> c,
+			BiPredicate<Integer, Integer> moveValidator, BiPredicate<Integer, Integer> normalisedMoveValidator) {
+		if (!(vm.getMovingPiece().getClass().isAssignableFrom(c))) {
+			throw new IllegalMove("This isn't a " + c, vm);
+		}
+		Board board = vm.getBoard();
+		int dRow = vm.getTo().row - vm.getFrom().row;
+		int dCol = vm.getTo().column - vm.getFrom().column;
+		if (!moveValidator.test(dCol, dRow))
+			throw new IllegalMove("This isn't a valid move", vm);
 		if (dRow < 0)
 			dRow = -1;
 		if (dRow > 0)
@@ -95,8 +118,8 @@ public class Validations {
 			dCol = -1;
 		if (dCol > 0)
 			dCol = 1;
-		if (dRow * dCol != 0)
-			throw new IllegalMove("Doesn't move in a single column or row", vm);
+		if (!normalisedMoveValidator.test(dCol, dRow))
+			throw new IllegalMove("This isn't a valid move", vm);
 		Position next = vm.getFrom();
 		while (vm.getTo() != (next = Position.position(next.column + dCol, next.row + dRow))) {
 			if (board.getPieceAt(next) != null)
@@ -105,14 +128,24 @@ public class Validations {
 		if (next != vm.getTo())
 			throw new IllegalMove("This is not a valid rook move", vm);
 	}
-	
-	public void validateKnightMove(ValidatedMove vm) {
-		if (!(vm.getMovingPiece() instanceof Knight))
-			throw new IllegalMove("Piece is not a knight", vm);
-		int dRow = vm.getTo().row - vm.getFrom().row;
-		int dCol = vm.getTo().column - vm.getFrom().column;
-		if (Math.abs(dRow*dCol)!=2)
-			throw new IllegalMove("This is not a valid knight move", vm);
+
+	public void validateRookMove(ValidatedMove vm) {
+		validateContinuousMove(vm, Rook.class, (dCol, dRow) -> true, (dCol, dRow) -> dRow * dCol == 0);
 	}
+
+	public void validateBishopMove(ValidatedMove vm) {
+		validateContinuousMove(vm, Bishop.class, (dCol, dRow) -> Math.abs(dRow) == Math.abs(dCol),
+				(dCol, dRow) -> dRow * dCol != 0);
+	}
+
+	public void validateQueenMove(ValidatedMove vm) {
+		validateContinuousMove(vm, Queen.class,
+				(dCol, dRow) -> (Math.abs(dRow) == Math.abs(dCol) || (dRow * dCol == 0)), (dCol, dRow) -> true);
+	}
+
+	public void validateKingMove(ValidatedMove vm) {
+		validateContinuousMove(vm, King.class, (dCol, dRow) -> Math.abs(dRow) * Math.abs(dCol) <= 1,
+				(dCol, dRow) -> true);
+	};
 
 }

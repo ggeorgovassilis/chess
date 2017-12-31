@@ -4,6 +4,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -20,13 +21,14 @@ public class Console implements Closeable {
 	boolean isopen = true;
 	Colour player = Colour.white;
 	LineNumberReader lnr;
+	String[] screen = new String[0];
 
 	public Console(Engine engine) {
 		this.engine = engine;
 		lnr = new LineNumberReader(new InputStreamReader(System.in));
 	}
 
-	void printRow(int row, String s[], Board board) {
+	void drawPiecesInRow(int row, String s[], Board board) {
 		int sRow = 2 + (7 - row) * 2;
 		for (int column = 0; column < 8; column++) {
 			int sColumn = 3 + column * 3;
@@ -38,9 +40,9 @@ public class Console implements Closeable {
 		}
 	}
 
-	public void printBoard() {
+	public void clear() {
 		// @formatter:off
-		String s[] = new String[] { 
+		screen = new String[] { 
 				"   a  b  c  d  e  f  g  h ", 
 				"     ▄▄▄   ▄▄▄   ▄▄▄   ▄▄▄",
 				"8    ███   ███   ███   ███", 
@@ -61,10 +63,39 @@ public class Console implements Closeable {
 				"  ▀▀▀   ▀▀▀   ▀▀▀   ▀▀▀   ", 
 				"   a  b  c  d  e  f  g  h " };
 		// @formatter:on
+
+	}
+
+	public void drawPieces() {
 		for (int row = 7; row >= 0; row--) {
-			printRow(row, s, engine.getBoard());
+			drawPiecesInRow(row, screen, engine.getBoard());
 		}
-		for (String line : s)
+	}
+
+	public void markPositions(List<Position> positions) {
+		for (Position p : positions) {
+			int start = 2 + p.column * 3;
+			int end = start + 3;
+			
+			String line = screen[(7 - p.row)*2 + 2-1];
+			screen[(7 - p.row)*2 + 2-1] = line.substring(0, start) + "┌─┐" + line.substring(end);
+
+			line = screen[(7 - p.row)*2 + 2];
+			screen[(7 - p.row)*2 + 2 ] = line.substring(0, start) + "│ │" + line.substring(end);
+
+			line = screen[(7 - p.row)*2 + 2+1];
+			screen[(7 - p.row)*2 + 2+1 ] = line.substring(0, start) + "└─┘" + line.substring(end);
+
+		}
+	}
+
+	public void printBoard() {
+		clear();
+		drawPieces();
+	}
+
+	public void flush() {
+		for (String line : screen)
 			System.out.println(line);
 	}
 
@@ -91,7 +122,11 @@ public class Console implements Closeable {
 		m = movePattern.matcher(line);
 		if (m.matches())
 			return new MoveCommand(engine, player, this, m.group(1), m.group(2));
-
+		// get valid moves?
+		Pattern getValidMovesPattern = Pattern.compile("\\?([abcdefgh][12345678])");
+		m = getValidMovesPattern.matcher(line);
+		if (m.matches())
+			return new FindValidMovesCommand(engine, this, m.group(1));
 		return new UnknownCommand(engine, this);
 	}
 
@@ -118,8 +153,9 @@ public class Console implements Closeable {
 
 	public void run() {
 		try {
+			printBoard();
+			flush();
 			while (isopen) {
-				printBoard();
 				System.out.print(">");
 				String line = lnr.readLine();
 				Command command = readCommand(line);

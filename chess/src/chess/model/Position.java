@@ -93,5 +93,9 @@ public class Position {
 		return conventionalRow - 1;
 	}
 
+	public static int COL(int conventionalColumn) {
+		return conventionalColumn - 1;
+	}
+
 
 }

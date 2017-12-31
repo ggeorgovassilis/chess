@@ -26,5 +26,7 @@ public class MoveCommand extends Command{
 	public void execute() {
 		ValidatedMove validMove = engine.validate(this.move);
 		engine.makeMove(validMove);
+		console.printBoard();
+		console.flush();
 	}
 }
