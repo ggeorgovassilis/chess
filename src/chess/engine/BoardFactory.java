@@ -31,11 +31,11 @@ public class BoardFactory {
 			setupPiece((c) -> new Pawn(c), Colour.black, column, 6, board);
 			setupPiece((c) -> new Pawn(c), Colour.white, column, 1, board);
 		}
-		// king
+		// kings
 		setupPiece((c) -> new King(c), Colour.black, 4, 7, board);
 		setupPiece((c) -> new King(c), Colour.white, 4, 0, board);
 
-		// king
+		// queens
 		setupPiece((c) -> new Queen(c), Colour.black, 3, 7, board);
 		setupPiece((c) -> new Queen(c), Colour.white, 3, 0, board);
 
@@ -59,6 +59,17 @@ public class BoardFactory {
 
 		setupPiece((c) -> new Rook(c), Colour.white, 0, 0, board);
 		setupPiece((c) -> new Rook(c), Colour.white, 7, 0, board);
+		return board;
+	}
+
+	public Board createSetupForEasyMate() {
+		Board board = new Board();
+		// king
+		setupPiece((c) -> new King(c), Colour.black, 4, 7, board);
+		setupPiece((c) -> new King(c), Colour.white, 4, 0, board);
+
+		setupPiece((c) -> new Rook(c), Colour.white, 0, 6, board);
+		setupPiece((c) -> new Queen(c), Colour.white, 2, 6, board);
 		return board;
 	}
 }

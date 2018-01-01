@@ -22,44 +22,10 @@ import java.util.stream.Collectors;
 
 import chess.model.Bishop;
 
-public class Engine {
-
-	final int maxDepth = 3;
-	Board board;
-	int turn;
-	Validations validations;
-	Map<Colour, King> kings = new HashMap<>();
+public class Engine extends EngineSupport{
 
 	public Engine() {
 		this.validations = new Validations(this);
-	}
-
-	public Board getBoard() {
-		return board;
-	}
-
-	protected List<Piece> getPieces() {
-		List<Piece> pieces = new ArrayList<Piece>(32);
-		for (int column = COL(1); column <= COL(8); column++)
-			for (int row = ROW(1); row <= ROW(8); row++) {
-				Piece p = board.getPieceAt(Position.position(column, row));
-				if (p != null)
-					pieces.add(p);
-			}
-		return pieces;
-	}
-
-	public void setBoard(Board board) {
-		this.board = board;
-		kings.clear();
-		getPieces().stream().forEach((piece) -> {
-			if (piece instanceof King)
-				kings.put(piece.getColour(), (King) piece);
-		});
-	}
-
-	protected King getKingOf(Colour colour) {
-		return kings.get(colour);
 	}
 
 	public ValidatedMove validateForPlayer(Move move) {
@@ -103,7 +69,7 @@ public class Engine {
 		if (move.getCapturedPiece() != null)
 			board.removePiece(move.capturedPiece);
 		board.placePiece(move.movingPiece);
-		turn++;
+		incrementTurn();
 		return move;
 	}
 
@@ -117,7 +83,7 @@ public class Engine {
 			board.placePiece(move.getCapturedPiece());
 		move.getMovingPiece().setPosition(move.getFrom());
 		board.placePiece(move.getMovingPiece());
-		turn--;
+		decreaseTurn();
 	}
 
 	public ValidatedMove isValid(Move move) {
@@ -140,7 +106,7 @@ public class Engine {
 
 	public boolean isChecked(Colour player) {
 		King king = getKingOf(player);
-		return getPieces().stream().anyMatch((p) -> {
+		return getPiecesOnBoard().stream().anyMatch((p) -> {
 			if (p.getColour() != player) {
 				List<ValidatedMove> moves = getValidMovesFor(p.getPosition());
 				for (ValidatedMove vm : moves)
@@ -151,45 +117,37 @@ public class Engine {
 		});
 	}
 
-	protected Colour getOtherPlayer(Colour p) {
-		return p == Colour.white ? Colour.black : Colour.white;
-	}
-
 	public double getRating(Colour player) {
 		//rating is [0,1] with 0 meaning he lost and 1 he won
 		
 		//get max 0.5 from pieces
-		double rating = getPieces().stream().mapToDouble(p -> p.getColour() == player ? 1.0 : 0).sum()/32.0;
+		double rating = getPiecesOnBoard().stream().mapToDouble(p -> p.getColour() == player ? 1.0 : 0).sum()/32.0;
 		
 		//halve rating if checked
 		if (isChecked(player))
 			rating = rating*0.5;
 		
 		//take square root if other player is checked (since value is <1, square-rooting increases score)
-		if (isChecked(getOtherPlayer(player)))
+		if (isChecked(getOpponentOf(player)))
 			rating = Math.sqrt(rating);
 		return rating;
 	}
 
-	public int getTurn() {
-		return turn;
-	}
-	
 	protected SearchResult getBestMoveFor(Colour colour, int depth) {
 		if (depth == maxDepth) {
 			return new SearchResult(getRating(colour), null);
 		}
-		List<Piece> playerPieces = getPieces().stream().filter(p -> p.getColour() == colour)
+		List<Piece> playerPieces = getPiecesOnBoard().stream().filter(p -> p.getColour() == colour)
 				.collect(Collectors.toList());
 		List<ValidatedMove> moves = playerPieces.stream().map(piece -> getValidMovesFor(piece.getPosition()))
 				.flatMap(List::stream).collect(Collectors.toList());
 		// TODO: what if list empty?
-		ValidatedMove myMoveThatGivesTheOtherPlayerHisLowestScore = moves.get(0);
+		ValidatedMove myMoveThatGivesTheOtherPlayerHisLowestScore = null;
 		double bestScoreForOtherPlayer = 10000;
 		for (ValidatedMove move : moves) {
 			makeMove(move);
 			if (!isChecked(move.getPlayer())) {
-				SearchResult bestMoveForOtherPlayer = getBestMoveFor(getOtherPlayer(colour), depth+1);
+				SearchResult bestMoveForOtherPlayer = getBestMoveFor(getOpponentOf(colour), depth+1);
 				if (bestMoveForOtherPlayer.rating < bestScoreForOtherPlayer) {
 					bestScoreForOtherPlayer = bestMoveForOtherPlayer.rating;
 					myMoveThatGivesTheOtherPlayerHisLowestScore = move;

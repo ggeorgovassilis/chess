@@ -7,7 +7,7 @@ import chess.engine.ValidatedMove;
 import chess.model.Piece.Colour;
 import chess.model.Position;
 
-public class MoveCommand extends Command{
+public class MoveCommand extends Command {
 
 	public final String from;
 	public final String to;
@@ -33,10 +33,15 @@ public class MoveCommand extends Command{
 		console.flush();
 		console.println("Calculating move...");
 		ValidatedMove responseMove = engine.getBestMoveFor(getOpponent(player));
-		engine.makeMove(responseMove);
-		console.printBoard();
-		console.flush();
-		console.println("Turn "+engine.getTurn());
+		if (responseMove != null) {
+			console.println(responseMove.toString());
+			engine.makeMove(responseMove);
+			console.printBoard();
+			console.flush();
+		} else {
+			console.println("Couldn't find move for oponent");
+		}
+		console.println("Turn " + engine.getTurn());
 		if (engine.isChecked(Colour.white))
 			System.out.println("White checked");
 		if (engine.isChecked(Colour.black))
