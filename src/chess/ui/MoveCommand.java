@@ -26,7 +26,7 @@ public class MoveCommand extends Command{
 
 	@Override
 	public void execute() {
-		ValidatedMove validMove = engine.validate(this.move);
+		ValidatedMove validMove = engine.validateForPlayer(this.move);
 		engine.makeMove(validMove);
 		console.setLastMove(validMove);
 		console.printBoard();

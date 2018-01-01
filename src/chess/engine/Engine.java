@@ -62,7 +62,14 @@ public class Engine {
 		return kings.get(colour);
 	}
 
-	public ValidatedMove validate(Move move) {
+	public ValidatedMove validateForPlayer(Move move) {
+		ValidatedMove vm = validate(move);
+		if (wouldPlayerBeCheckedIfHePlayedMove(vm))
+			throw new IllegalMove(move.getPlayer()+" would be checked", move);
+		return vm;
+	}
+
+	protected ValidatedMove validate(Move move) {
 		ValidatedMove vm = validations.validateBasic(move, board, turn);
 		if (vm.getMovingPiece() instanceof Pawn)
 			validations.validatePawnMove(vm);
@@ -79,6 +86,14 @@ public class Engine {
 		else
 			throw new IllegalMove("Unknown move", move);
 		return vm;
+	}
+
+	public boolean wouldPlayerBeCheckedIfHePlayedMove(ValidatedMove move) {
+		Colour player = move.getPlayer();
+		makeMove(move);
+		boolean wouldMovingPlayerBeChecked = isChecked(player);
+		undoMove(move);
+		return wouldMovingPlayerBeChecked;
 	}
 
 	public ValidatedMove makeMove(ValidatedMove move) {
@@ -173,10 +188,12 @@ public class Engine {
 		double bestScoreForOtherPlayer = 10000;
 		for (ValidatedMove move : moves) {
 			makeMove(move);
-			SearchResult bestMoveForOtherPlayer = getBestMoveFor(getOtherPlayer(colour), depth+1);
-			if (bestMoveForOtherPlayer.rating < bestScoreForOtherPlayer) {
-				bestScoreForOtherPlayer = bestMoveForOtherPlayer.rating;
-				myMoveThatGivesTheOtherPlayerHisLowestScore = move;
+			if (!isChecked(move.getPlayer())) {
+				SearchResult bestMoveForOtherPlayer = getBestMoveFor(getOtherPlayer(colour), depth+1);
+				if (bestMoveForOtherPlayer.rating < bestScoreForOtherPlayer) {
+					bestScoreForOtherPlayer = bestMoveForOtherPlayer.rating;
+					myMoveThatGivesTheOtherPlayerHisLowestScore = move;
+				}
 			}
 			undoMove(move);
 		}
