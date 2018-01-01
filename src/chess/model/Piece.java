@@ -1,5 +1,9 @@
 package chess.model;
 
+import java.util.List;
+
+import chess.engine.Move;
+
 public abstract class Piece {
 
 	public enum Colour {
@@ -32,4 +36,6 @@ public abstract class Piece {
 	public String toString() {
 		return getShortNotation();
 	}
+	
+	public abstract List<Move> getPossibleMoves();
 }

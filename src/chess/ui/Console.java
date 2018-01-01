@@ -9,6 +9,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import chess.engine.Engine;
+import chess.engine.ValidatedMove;
 import chess.model.Board;
 import chess.model.IllegalMove;
 import chess.model.Piece;
@@ -22,6 +23,15 @@ public class Console implements Closeable {
 	Colour player = Colour.white;
 	LineNumberReader lnr;
 	String[] screen = new String[0];
+	ValidatedMove lastMove;
+
+	public ValidatedMove getLastMove() {
+		return lastMove;
+	}
+
+	public void setLastMove(ValidatedMove lastMove) {
+		this.lastMove = lastMove;
+	}
 
 	public Console(Engine engine) {
 		this.engine = engine;
@@ -127,6 +137,12 @@ public class Console implements Closeable {
 		m = getValidMovesPattern.matcher(line);
 		if (m.matches())
 			return new FindValidMovesCommand(engine, this, m.group(1));
+
+		// undo?
+		Pattern getUndoPattern = Pattern.compile("undo");
+		m = getUndoPattern.matcher(line);
+		if (m.matches())
+			return new UndoCommand(engine, this);
 		return new UnknownCommand(engine, this);
 	}
 

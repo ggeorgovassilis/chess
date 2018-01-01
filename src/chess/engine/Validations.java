@@ -35,7 +35,7 @@ public class Validations {
 			throw new IllegalMove("There is no piece at " + move.getTo(), move);
 		// is the start and end position coded into the board?
 		if (move.getFrom() == Position.illegalPosition || move.getTo() == Position.illegalPosition)
-			throw new RuntimeException("IllegalPosition");
+			throw new IllegalMove("IllegalPosition", move);
 		// is there a piece of the moving player at the starting position?
 		if (movingPiece.getColour() != move.getPlayer())
 			throw new IllegalMove("Player " + move.getPlayer() + " not allowed to move other player's piece", move);
