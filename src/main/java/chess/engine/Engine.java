@@ -1,6 +1,5 @@
 package chess.engine;
 
-import chess.model.Board;
 import chess.model.IllegalMove;
 import chess.model.King;
 import chess.model.Knight;
@@ -11,46 +10,33 @@ import chess.model.Position;
 import chess.model.Queen;
 import chess.model.Rook;
 
-import static chess.model.Position.*;
-
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import chess.model.Bishop;
 
-public class Engine extends EngineSupport{
+public class Engine extends EngineSupport {
 
 	public Engine() {
 		this.validations = new Validations(this);
 	}
 
 	public ValidatedMove validateForPlayer(Move move) {
-		ValidatedMove vm = validate(move);
+		ValidatedMove vm = validatePieceMoves(move);
 		if (wouldPlayerBeCheckedIfHePlayedMove(vm))
-			throw new IllegalMove(move.getPlayer()+" would be checked", move);
+			throw new IllegalMove(move.getPlayer() + " would be checked", move);
 		return vm;
 	}
 
-	protected ValidatedMove validate(Move move) {
-		ValidatedMove vm = validations.validateBasic(move, board, turn);
-		if (vm.getMovingPiece() instanceof Pawn)
-			validations.validatePawnMove(vm);
-		else if (vm.getMovingPiece() instanceof Rook)
-			validations.validateRookMove(vm);
-		else if (vm.getMovingPiece() instanceof Knight)
-			validations.validateKnightMove(vm);
-		else if (vm.getMovingPiece() instanceof Bishop)
-			validations.validateBishopMove(vm);
-		else if (vm.getMovingPiece() instanceof Queen)
-			validations.validateQueenMove(vm);
-		else if (vm.getMovingPiece() instanceof King)
-			validations.validateKingMove(vm);
-		else
-			throw new IllegalMove("Unknown move", move);
+	protected ValidatedMove validateBasicBoardRules(Move move) {
+		return validations.validateBasic(move, board, turn);
+	}
+
+	protected ValidatedMove validatePieceMoves(Move move) {
+		ValidatedMove vm = validateBasicBoardRules(move);
+		vm.validateMore(this);
 		return vm;
 	}
 
@@ -88,7 +74,7 @@ public class Engine extends EngineSupport{
 
 	public ValidatedMove isValid(Move move) {
 		try {
-			return validate(move);
+			return validatePieceMoves(move);
 		} catch (IllegalMove e) {
 			return null;
 		}
@@ -98,36 +84,38 @@ public class Engine extends EngineSupport{
 		List<ValidatedMove> validMoves = new ArrayList<>();
 		Piece piece = board.getPieceAt(position);
 		if (piece != null) {
-			List<Move> moves = piece.getPossibleMoves();
-			validMoves = moves.stream().map(m -> isValid(m)).filter(m -> m != null).collect(Collectors.toList());
+			piece.getPossibleMoves().forEachRemaining(m -> {
+				ValidatedMove vm = isValid(m);
+				if (vm != null)
+					validMoves.add(vm);
+			});
 		}
 		return validMoves;
 	}
 
 	public boolean isChecked(Colour player) {
-		King king = getKingOf(player);
-		return getPiecesOnBoard().stream().anyMatch((p) -> {
-			if (p.getColour() != player) {
-				List<ValidatedMove> moves = getValidMovesFor(p.getPosition());
-				for (ValidatedMove vm : moves)
-					if (vm.getTo() == king.getPosition())
-						return true;
-			}
-			return false;
+		// IDEA: start reverse moves at the king's position; where they hit opponent
+		// pieces, check if those pieces
+		// check the king
+		final Position kingPosition = getKingOf(player).getPosition();
+		return board.getPiecesFor(getOpponentOf(player)).parallelStream().anyMatch((p) -> {
+			List<ValidatedMove> moves = getValidMovesFor(p.getPosition());
+			return moves.stream().anyMatch(vm -> vm.getTo() == kingPosition);
 		});
 	}
 
 	public double getRating(Colour player) {
-		//rating is [0,1] with 0 meaning he lost and 1 he won
-		
-		//get max 0.5 from pieces
-		double rating = getPiecesOnBoard().stream().mapToDouble(p -> p.getColour() == player ? 1.0 : 0).sum()/32.0;
-		
-		//halve rating if checked
+		// rating is [0,1] with 0 meaning he lost and 1 he won
+
+		// get max 0.5 from pieces
+		double rating = (double)board.getPiecesFor(player).size()/16.0;
+
+		// halve rating if checked
 		if (isChecked(player))
-			rating = rating*0.5;
-		
-		//take square root if other player is checked (since value is <1, square-rooting increases score)
+			rating = rating * 0.5;
+
+		// take square root if other player is checked (since value is <1,
+		// square-rooting increases score)
 		if (isChecked(getOpponentOf(player)))
 			rating = Math.sqrt(rating);
 		return rating;
@@ -137,17 +125,15 @@ public class Engine extends EngineSupport{
 		if (depth == maxDepth) {
 			return new SearchResult(getRating(colour), null);
 		}
-		List<Piece> playerPieces = getPiecesOnBoard().stream().filter(p -> p.getColour() == colour)
-				.collect(Collectors.toList());
-		List<ValidatedMove> moves = playerPieces.stream().map(piece -> getValidMovesFor(piece.getPosition()))
-				.flatMap(List::stream).collect(Collectors.toList());
-		// TODO: what if list empty?
 		ValidatedMove myMoveThatGivesTheOtherPlayerHisLowestScore = null;
+		List<ValidatedMove> moves = board.getPiecesFor(colour).parallelStream()
+				.map(piece -> getValidMovesFor(piece.getPosition())).flatMap(List::stream).collect(Collectors.toList());
+		// TODO: what if list empty?
 		double bestScoreForOtherPlayer = 10000;
 		for (ValidatedMove move : moves) {
 			makeMove(move);
 			if (!isChecked(move.getPlayer())) {
-				SearchResult bestMoveForOtherPlayer = getBestMoveFor(getOpponentOf(colour), depth+1);
+				SearchResult bestMoveForOtherPlayer = getBestMoveFor(getOpponentOf(colour), depth + 1);
 				if (bestMoveForOtherPlayer.rating < bestScoreForOtherPlayer) {
 					bestScoreForOtherPlayer = bestMoveForOtherPlayer.rating;
 					myMoveThatGivesTheOtherPlayerHisLowestScore = move;
@@ -155,7 +141,7 @@ public class Engine extends EngineSupport{
 			}
 			undoMove(move);
 		}
-		return new SearchResult(1.0-bestScoreForOtherPlayer, myMoveThatGivesTheOtherPlayerHisLowestScore);
+		return new SearchResult(1.0 - bestScoreForOtherPlayer, myMoveThatGivesTheOtherPlayerHisLowestScore);
 	}
 
 	public ValidatedMove getBestMoveFor(Colour colour) {
