@@ -22,7 +22,8 @@ public class UndoCommand extends Command{
 		}
 		console.setLastMove(null);
 		engine.undoMove(lastMove);
-		console.printBoard();
+		console.drawBoard();
+		console.drawPieces();
 		console.flush();
 		console.println("Turn "+engine.getTurn());
 		if (engine.isChecked(Colour.white))

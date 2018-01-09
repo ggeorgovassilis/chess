@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import chess.model.Board;
 import chess.model.King;
@@ -27,7 +28,11 @@ abstract class EngineSupport {
 	
 	protected void cacheKings() {
 		kings.clear();
-		getPiecesOnBoard().stream().forEach((piece) -> {
+		board.getPiecesFor(Colour.white).stream().forEach((piece) -> {
+			if (piece instanceof King)
+				kings.put(piece.getColour(), (King) piece);
+		});
+		board.getPiecesFor(Colour.black).stream().forEach((piece) -> {
 			if (piece instanceof King)
 				kings.put(piece.getColour(), (King) piece);
 		});
@@ -37,17 +42,6 @@ abstract class EngineSupport {
 		return board;
 	}
 
-	protected List<Piece> getPiecesOnBoard() {
-		List<Piece> pieces = new ArrayList<Piece>(32);
-		for (int column = COL(1); column <= COL(8); column++)
-			for (int row = ROW(1); row <= ROW(8); row++) {
-				Piece p = board.getPieceAt(Position.position(column, row));
-				if (p != null)
-					pieces.add(p);
-			}
-		return pieces;
-	}
-	
 	public void setBoard(Board board) {
 		this.board = board;
 		cacheKings();

@@ -29,14 +29,18 @@ public class MoveCommand extends Command {
 		ValidatedMove validMove = engine.validateForPlayer(this.move);
 		engine.makeMove(validMove);
 		console.setLastMove(validMove);
-		console.printBoard();
+		console.drawBoard();
+		console.drawPieces();
 		console.flush();
 		console.println("Calculating move...");
+		long timestamp=-System.currentTimeMillis();
 		ValidatedMove responseMove = engine.getBestMoveFor(getOpponent(player));
+		timestamp+=System.currentTimeMillis();
 		if (responseMove != null) {
-			console.println(responseMove.toString());
+			console.println(responseMove.toString()+", "+timestamp+" ms");
 			engine.makeMove(responseMove);
-			console.printBoard();
+			console.drawBoard();
+			console.drawPieces();
 			console.flush();
 		} else {
 			console.println("Couldn't find move for oponent");

@@ -1,10 +1,15 @@
 package chess.model;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Stream;
 
 import chess.engine.BaseMove;
+import chess.engine.Engine;
 import chess.engine.Move;
+import chess.engine.ValidatedMove;
+import chess.model.Piece.MoveProducer;
 
 public class Knight extends Piece {
 
@@ -23,24 +28,51 @@ public class Knight extends Piece {
 	}
 
 	@Override
-	public List<Move> getPossibleMoves() {
-		List<Move> moves = new ArrayList<>();
-		Position[] positions = new Position[] { position, position, position, position, position, position, position,
-				position };
-		for (int i = 0; i < 1; i++) {
-			positions[0] = positions[0].north().northWest();
-			positions[1] = positions[1].north().northEast();
-			positions[2] = positions[2].east().northEast();
-			positions[3] = positions[3].east().southEast();
-			positions[4] = positions[4].south().southEast();
-			positions[5] = positions[5].south().southWest();
-			positions[6] = positions[6].west().southWest();
-			positions[7] = positions[7].west().northWest();
-			for (Position p : positions)
-				if (p != Position.illegalPosition)
-					moves.add(new BaseMove(colour, getPosition(), p));
-		}
-		return moves;
+	protected MoveProducer generateMoves() {
+
+		return new MoveProducer() {
+
+			@Override
+			int getMaxMoveCounter() {
+				return 8;
+			}
+
+			@Override
+			Position getDestinationPosition(int moveCounter) {
+				Position p = getPosition();
+				switch (moveCounter) {
+				case 0:
+					return p.north().northWest();
+				case 1:
+					return p.north().northEast();
+				case 2:
+					return p.east().northEast();
+				case 3:
+					return p.east().southEast();
+				case 4:
+					return p.south().southEast();
+				case 5:
+					return p.south().southWest();
+				case 6:
+					return p.west().southWest();
+				case 7:
+					return p.west().northWest();
+				default:
+					return null;
+				}
+			}
+		};
+
+	}
+
+	@Override
+	public void validateMove(ValidatedMove vm, Engine engine) throws IllegalMove {
+		if (!(vm.getMovingPiece() instanceof Knight))
+			throw new IllegalMove("Piece is not a knight", vm);
+		int dRow = vm.getTo().row - vm.getFrom().row;
+		int dCol = vm.getTo().column - vm.getFrom().column;
+		if (Math.abs(dRow * dCol) != 2)
+			throw new IllegalMove("This is not a valid knight move", vm);
 	}
 
 }

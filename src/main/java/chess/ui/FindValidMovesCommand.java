@@ -24,8 +24,9 @@ public class FindValidMovesCommand extends Command {
 		List<ValidatedMove> moves = engine.getValidMovesFor(position);
 		List<Position> positions = moves.stream().map((move)->move.getTo()).collect(Collectors.toList());
 		System.out.println(positions);
-		console.printBoard();
+		console.drawBoard();
 		console.markPositions(positions);
+		console.drawPieces();
 		console.flush();
 	}
 

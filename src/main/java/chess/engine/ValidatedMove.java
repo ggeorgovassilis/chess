@@ -1,6 +1,7 @@
 package chess.engine;
 
 import chess.model.Board;
+import chess.model.IllegalMove;
 import chess.model.Piece;
 import chess.model.Position;
 
@@ -41,6 +42,10 @@ public class ValidatedMove extends BaseMove {
 			return getPlayer() + " " + getMovingPiece() + " " + getFrom() + "-" + getTo();
 		else
 			return getPlayer() + " " + getMovingPiece() + " " + getFrom() + "x" + getCapturedPiece()+" "+getTo();
+	}
+	
+	public void validateMore(Engine engine) throws IllegalMove{
+		getMovingPiece().validateMove(this, engine);
 	}
 
 }

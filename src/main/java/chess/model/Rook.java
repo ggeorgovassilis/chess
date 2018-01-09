@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import chess.engine.BaseMove;
+import chess.engine.Engine;
 import chess.engine.Move;
+import chess.engine.ValidatedMove;
 
 public class Rook extends Piece {
 
@@ -23,19 +25,38 @@ public class Rook extends Piece {
 	}
 
 	@Override
-	public List<Move> getPossibleMoves() {
-		List<Move> moves = new ArrayList<>();
-		Position[] positions = new Position[] { position, position, position, position};
-		for (int i = 0; i < 4; i++) {
-			positions[0] = positions[0].north();
-			positions[1] = positions[1].east();
-			positions[2] = positions[2].south();
-			positions[3] = positions[3].west();
-			for (Position p : positions)
-				if (p != Position.illegalPosition)
-					moves.add(new BaseMove(colour, getPosition(), p));
-		}
-		return moves;
+	protected MoveProducer generateMoves() {
+		return new MoveProducer() {
+			
+			Position[] positions;
+			@Override
+			int getMaxMoveCounter() {
+				return 32;
+			}
+			
+			@Override
+			protected  void initialise() {
+				Position p = getPosition();
+				positions = new Position[]{p,p,p,p};
+			}
+			
+			@Override
+			Position getDestinationPosition(int moveCounter) {
+				int p = moveCounter%positions.length;
+				if (p==0) {
+					positions[0] = positions[0].north;
+					positions[1] = positions[1].east;
+					positions[2] = positions[2].south;
+					positions[3] = positions[3].west;
+				}
+				return positions[p];
+			}
+		};
+	}
+
+	@Override
+	public void validateMove(ValidatedMove vm, Engine engine) throws IllegalMove {
+		validateContinuousMove(vm, (dCol, dRow) -> true, (dCol, dRow) -> dRow * dCol == 0);
 	}
 
 }

@@ -1,12 +1,15 @@
 package chess.model;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import chess.engine.BaseMove;
+import chess.engine.Engine;
 import chess.engine.Move;
+import chess.engine.ValidatedMove;
 
-public class Bishop extends Piece{
+public class Bishop extends Piece {
 
 	public Bishop(Colour colour) {
 		super(colour);
@@ -14,28 +17,44 @@ public class Bishop extends Piece{
 
 	@Override
 	public String getShortNotation() {
-		return getColour()==Colour.white?"B":"b";
+		return getColour() == Colour.white ? "B" : "b";
 	}
 
 	@Override
 	public String getSymbol() {
-		return getColour()==Colour.white?"♗":"♝";
+		return getColour() == Colour.white ? "♗" : "♝";
 	}
 
 	@Override
-	public List<Move> getPossibleMoves() {
-		List<Move> moves = new ArrayList<>();
-		Position[] positions = new Position[] {position,position,position,position};
-		for (int i=0;i<8;i++) {
-			positions[0] = positions[0].northEast();
-			positions[1] = positions[1].southEast();
-			positions[2] = positions[2].southWest();
-			positions[3] = positions[3].northWest();
-			for (Position p:positions)
-				if (p!=Position.illegalPosition)
-					moves.add(new BaseMove(colour, getPosition(), p));
-		}
-		return moves;
+	protected MoveProducer generateMoves() {
+		return new MoveProducer() {
+
+			@Override
+			int getMaxMoveCounter() {
+				return 24;
+			}
+
+			@Override
+			Position getDestinationPosition(int moveCounter) {
+				Position p = getPosition();
+				int direction = moveCounter % 4;
+				int dColumn = direction % 2 == 0 ? -1 : 1;
+				int dRow = direction < 2 ? -1 : 1;
+				int radius = moveCounter / 4;
+				int column = p.column;
+				int row = p.row;
+				column += radius * dColumn;
+				row += radius * dRow;
+				return Position.position(column, row);
+			}
+
+		};
+	}
+
+	@Override
+	public void validateMove(ValidatedMove vm, Engine engine) throws IllegalMove {
+		validateContinuousMove(vm, (dCol, dRow) -> Math.abs(dRow) == Math.abs(dCol),
+				(dCol, dRow) -> dRow * dCol != 0);
 	}
 
 }

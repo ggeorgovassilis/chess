@@ -1,10 +1,14 @@
 package chess.model;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import chess.engine.BaseMove;
+import chess.engine.Engine;
 import chess.engine.Move;
+import chess.engine.ValidatedMove;
+import chess.model.Piece.MoveProducer;
 
 public class King extends Piece {
 
@@ -23,23 +27,45 @@ public class King extends Piece {
 	}
 
 	@Override
-	public List<Move> getPossibleMoves() {
-		List<Move> moves = new ArrayList<>();
-		Position[] positions = new Position[] { position, position, position, position,position,position,position,position };
-		for (int i = 0; i < 1; i++) {
-			positions[0] = positions[0].north();
-			positions[1] = positions[1].northEast();
-			positions[2] = positions[2].east();
-			positions[3] = positions[3].southEast();
-			positions[4] = positions[4].south();
-			positions[5] = positions[5].southWest();
-			positions[6] = positions[6].west();
-			positions[7] = positions[7].northWest();
-			for (Position p : positions)
-				if (p != Position.illegalPosition)
-					moves.add(new BaseMove(colour, getPosition(), p));
-		}
-		return moves;
+	protected MoveProducer generateMoves() {
+		return new MoveProducer() {
+
+			@Override
+			int getMaxMoveCounter() {
+				return 8;
+			}
+
+			@Override
+			Position getDestinationPosition(int moveCounter) {
+				Position p = getPosition();
+				switch (moveCounter) {
+				case 0:
+					return p.north();
+				case 1:
+					return p.northEast();
+				case 2:
+					return p.east();
+				case 3:
+					return p.southEast();
+				case 4:
+					return p.south();
+				case 5:
+					return p.southWest();
+				case 6:
+					return p.west();
+				case 7:
+					return p.northWest();
+				default:
+					return null;
+				}
+			}
+		};
+	}
+
+	@Override
+	public void validateMove(ValidatedMove vm, Engine engine) throws IllegalMove {
+		validateContinuousMove(vm, (dCol, dRow) -> Math.abs(dRow) * Math.abs(dCol) <= 1,
+				(dCol, dRow) -> true);
 	}
 
 }

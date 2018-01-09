@@ -50,7 +50,7 @@ public class Console implements Closeable {
 		}
 	}
 
-	public void clear() {
+	public void drawBoard() {
 		// @formatter:off
 		screen = new String[] { 
 				"   a  b  c  d  e  f  g  h ", 
@@ -86,22 +86,17 @@ public class Console implements Closeable {
 		for (Position p : positions) {
 			int start = 2 + p.column * 3;
 			int end = start + 3;
-			
-			String line = screen[(7 - p.row)*2 + 2-1];
-			screen[(7 - p.row)*2 + 2-1] = line.substring(0, start) + "┌─┐" + line.substring(end);
 
-			line = screen[(7 - p.row)*2 + 2];
-			screen[(7 - p.row)*2 + 2 ] = line.substring(0, start) + "│ │" + line.substring(end);
+			String line = screen[(7 - p.row) * 2 + 2 - 1];
+			screen[(7 - p.row) * 2 + 2 - 1] = line.substring(0, start) + "┌─┐" + line.substring(end);
 
-			line = screen[(7 - p.row)*2 + 2+1];
-			screen[(7 - p.row)*2 + 2+1 ] = line.substring(0, start) + "└─┘" + line.substring(end);
+			line = screen[(7 - p.row) * 2 + 2];
+			screen[(7 - p.row) * 2 + 2] = line.substring(0, start) + "│ │" + line.substring(end);
+
+			line = screen[(7 - p.row) * 2 + 2 + 1];
+			screen[(7 - p.row) * 2 + 2 + 1] = line.substring(0, start) + "└─┘" + line.substring(end);
 
 		}
-	}
-
-	public void printBoard() {
-		clear();
-		drawPieces();
 	}
 
 	public void flush() {
@@ -166,19 +161,22 @@ public class Console implements Closeable {
 			error(e.getMessage());
 		}
 	}
+	
+	public boolean isOpen() {
+		return isopen;
+	}
 
-	public void run() {
+	public Command getNextCommand() {
 		try {
-			printBoard();
-			flush();
-			while (isopen) {
-				System.out.print(">");
-				String line = lnr.readLine();
-				Command command = readCommand(line);
-				execute(command);
-			}
+			if (!isopen)
+				return null;
+			System.out.print(">");
+			String line = lnr.readLine();
+			Command command = readCommand(line);
+			return command;
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
+
 }
