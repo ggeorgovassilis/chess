@@ -68,4 +68,11 @@ public class King extends Piece {
 				(dCol, dRow) -> true);
 	}
 
+	@Override
+	public boolean canTake(Piece p, Engine engine) {
+		int dc = Math.abs(p.getPosition().column - getPosition().column);
+		int dr = Math.abs(p.getPosition().row - getPosition().row);
+		return dc<=1 && dr<=1;
+	}
+
 }

@@ -75,4 +75,11 @@ public class Knight extends Piece {
 			throw new IllegalMove("This is not a valid knight move", vm);
 	}
 
+	@Override
+	public boolean canTake(Piece p, Engine engine) {
+		int dc = Math.abs(p.getPosition().column-getPosition().column);
+		int dr = Math.abs(p.getPosition().row-getPosition().row);
+		return (dr*dc==2);
+	}
+
 }

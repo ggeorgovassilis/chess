@@ -96,7 +96,7 @@ public abstract class Piece {
 	
 	protected void validateContinuousMove(ValidatedMove vm,
 			BiPredicate<Integer, Integer> moveValidator, BiPredicate<Integer, Integer> normalisedMoveValidator) {
-		if (!(vm.getMovingPiece()!=this)) {
+		if ((vm.getMovingPiece()!=this)) {
 			throw new IllegalMove("Move doesn't apply to this piece", vm);
 		}
 		Board board = vm.getBoard();
@@ -125,4 +125,6 @@ public abstract class Piece {
 
 	
 	public abstract void validateMove(ValidatedMove vm, Engine engine) throws IllegalMove;
+	
+	public abstract boolean canTake(Piece p, Engine engine);
 }

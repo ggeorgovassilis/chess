@@ -58,5 +58,23 @@ public class Rook extends Piece {
 	public void validateMove(ValidatedMove vm, Engine engine) throws IllegalMove {
 		validateContinuousMove(vm, (dCol, dRow) -> true, (dCol, dRow) -> dRow * dCol == 0);
 	}
+	
+	@Override
+	public boolean canTake(Piece p, Engine engine) {
+		int dc = p.getPosition().column-getPosition().column;
+		int dr = p.getPosition().row-getPosition().row;
+		if (dc*dr!=0)
+			return false;
+		Position pos = getPosition();
+		while(true){
+			pos = Position.position(pos.column+dc, pos.row+dr);
+			Piece piece = engine.getBoard().getPieceAt(pos);
+			if (piece == p)
+				return true;
+			if (piece!=null)
+				return false;
+		}
+	}
+
 
 }

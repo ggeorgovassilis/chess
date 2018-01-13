@@ -10,13 +10,13 @@ import chess.model.Piece.Colour;
 public class Board {
 
 	protected Piece[][] board = new Piece[8][8];
-	protected Set<Piece> whitePieces = new HashSet<>();
-	protected Set<Piece> blackPieces = new HashSet<>();
+	protected List<Piece> whitePieces = new ArrayList<>(16);
+	protected List<Piece> blackPieces = new ArrayList<>(16);
 
 	public Board(){
 	}
 
-	public Set<Piece> getPiecesFor(Colour c){
+	public List<Piece> getPiecesFor(Colour c){
 		return c==Colour.white?whitePieces:blackPieces;
 	}
 	

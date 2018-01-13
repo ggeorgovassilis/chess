@@ -11,16 +11,28 @@ import chess.model.Queen;
 import chess.model.Rook;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import chess.model.Bishop;
 
 public class Engine extends EngineSupport {
 
+	Map<Class, Double> pieceRatings = new HashMap<>();
+
 	public Engine() {
 		this.validations = new Validations(this);
+		pieceRatings.put(Pawn.class, 1.0);
+		pieceRatings.put(Knight.class, 3.0);
+		pieceRatings.put(Bishop.class, 4.0);
+		pieceRatings.put(Rook.class, 5.0);
+		pieceRatings.put(Queen.class, 6.0);
+		pieceRatings.put(King.class, 0.0);
 	}
 
 	public ValidatedMove validateForPlayer(Move move) {
@@ -80,39 +92,30 @@ public class Engine extends EngineSupport {
 		}
 	}
 
-	public List<ValidatedMove> getValidMovesFor(Position position) {
-		List<ValidatedMove> validMoves = new ArrayList<>();
-		Piece piece = board.getPieceAt(position);
-		if (piece != null) {
-			piece.getPossibleMoves().forEachRemaining(m -> {
-				ValidatedMove vm = isValid(m);
-				if (vm != null)
-					validMoves.add(vm);
-			});
-		}
-		return validMoves;
+	public Iterator<ValidatedMove> getValidMovesFor(Piece piece) {
+		FilterIterator<Move, ValidatedMove> filterator = new FilterIterator<>(piece.getPossibleMoves(),
+				move -> isValid(move));
+		return filterator;
 	}
 
 	public boolean isChecked(Colour player) {
-		// IDEA: start reverse moves at the king's position; where they hit opponent
-		// pieces, check if those pieces
-		// check the king
-		final Position kingPosition = getKingOf(player).getPosition();
-		return board.getPiecesFor(getOpponentOf(player)).parallelStream().anyMatch((p) -> {
-			List<ValidatedMove> moves = getValidMovesFor(p.getPosition());
-			return moves.stream().anyMatch(vm -> vm.getTo() == kingPosition);
+		final King king = getKingOf(player);
+		return board.getPiecesFor(getOpponentOf(player)).stream().anyMatch((p) -> {
+			boolean b = p.canTake(king, this);
+			return b;
 		});
 	}
 
 	public double getRating(Colour player) {
 		// rating is [0,1] with 0 meaning he lost and 1 he won
 
-		// get max 0.5 from pieces
-		double rating = (double)board.getPiecesFor(player).size()/16.0;
+		double rating = board.getPiecesFor(player).stream().map(p -> pieceRatings.get(p.getClass()))
+				.mapToDouble(Double::doubleValue).sum();
 
 		// halve rating if checked
 		if (isChecked(player))
-			rating = rating * 0.5;
+			rating = rating * 0.9;
+		rating=rating*0.1; //account for various pawn promotions
 
 		// take square root if other player is checked (since value is <1,
 		// square-rooting increases score)
@@ -121,31 +124,35 @@ public class Engine extends EngineSupport {
 		return rating;
 	}
 
-	protected SearchResult getBestMoveFor(Colour colour, int depth) {
-		if (depth == maxDepth) {
+	protected SearchResult getBestMoveFor(Colour colour, int depth, long endOfSearch) {
+		if (depth == MAX_SEARCH_DEPTH || System.currentTimeMillis()>endOfSearch) {
 			return new SearchResult(getRating(colour), null);
 		}
 		ValidatedMove myMoveThatGivesTheOtherPlayerHisLowestScore = null;
-		List<ValidatedMove> moves = board.getPiecesFor(colour).parallelStream()
-				.map(piece -> getValidMovesFor(piece.getPosition())).flatMap(List::stream).collect(Collectors.toList());
-		// TODO: what if list empty?
+		// copy of pieces because MinMax will modify the piece set -> concurrent
+		// modification exception
+		List<Piece> pieces = new ArrayList<>(board.getPiecesFor(colour));
 		double bestScoreForOtherPlayer = 10000;
-		for (ValidatedMove move : moves) {
-			makeMove(move);
-			if (!isChecked(move.getPlayer())) {
-				SearchResult bestMoveForOtherPlayer = getBestMoveFor(getOpponentOf(colour), depth + 1);
-				if (bestMoveForOtherPlayer.rating < bestScoreForOtherPlayer) {
-					bestScoreForOtherPlayer = bestMoveForOtherPlayer.rating;
-					myMoveThatGivesTheOtherPlayerHisLowestScore = move;
+		for (Piece piece : pieces) {
+			Iterator<ValidatedMove> moves = getValidMovesFor(piece);
+			if (moves.hasNext())
+				for (ValidatedMove move = moves.next(); moves.hasNext(); move = moves.next()) {
+					makeMove(move);
+					if (!isChecked(move.getPlayer())) {
+						SearchResult bestMoveForOtherPlayer = getBestMoveFor(getOpponentOf(colour), depth + 1, endOfSearch);
+						if (bestMoveForOtherPlayer.rating < bestScoreForOtherPlayer) {
+							bestScoreForOtherPlayer = bestMoveForOtherPlayer.rating;
+							myMoveThatGivesTheOtherPlayerHisLowestScore = move;
+						}
+					}
+					undoMove(move);
 				}
-			}
-			undoMove(move);
 		}
 		return new SearchResult(1.0 - bestScoreForOtherPlayer, myMoveThatGivesTheOtherPlayerHisLowestScore);
 	}
 
 	public ValidatedMove getBestMoveFor(Colour colour) {
-		return getBestMoveFor(colour, 0).move;
+		return getBestMoveFor(colour, 0, System.currentTimeMillis()+MAX_SEARCH_TIME_MS).move;
 	}
 
 }

@@ -53,8 +53,26 @@ public class Bishop extends Piece {
 
 	@Override
 	public void validateMove(ValidatedMove vm, Engine engine) throws IllegalMove {
-		validateContinuousMove(vm, (dCol, dRow) -> Math.abs(dRow) == Math.abs(dCol),
-				(dCol, dRow) -> dRow * dCol != 0);
+		validateContinuousMove(vm, (dCol, dRow) -> Math.abs(dRow) == Math.abs(dCol), (dCol, dRow) -> dRow * dCol != 0);
+	}
+
+	@Override
+	public boolean canTake(Piece p, Engine engine) {
+		int dc = p.getPosition().column - getPosition().column;
+		int dr = p.getPosition().row - getPosition().row;
+		if (Math.abs(dc) != Math.abs(dr))
+			return false;
+		dc = dc > 0 ? 1 : -1;
+		dr = dr > 0 ? 1 : -1;
+		Position pos = getPosition();
+		while (true) {
+			pos = Position.position(pos.column + dc, pos.row + dr);
+			Piece piece = engine.getBoard().getPieceAt(pos);
+			if (piece == p)
+				return true;
+			if (piece != null)
+				return false;
+		}
 	}
 
 }

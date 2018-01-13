@@ -104,4 +104,12 @@ public class Pawn extends Piece {
 		throw new IllegalMove("This is not a valid pawn move", vm);
 	}
 
+	@Override
+	public boolean canTake(Piece p, Engine engine) {
+		int dc = Math.abs(getPosition().column-p.getPosition().column);
+		int dr = getPosition().row-p.getPosition().row;
+		int direction = getColour()==Colour.white?1:-1;
+		return dc*dr*direction==1;
+	}
+
 }
