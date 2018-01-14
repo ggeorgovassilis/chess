@@ -72,7 +72,7 @@ public class Queen extends Piece {
 	public boolean canTake(Piece target, Board board) {
 		int dc = target.getPosition().column - getPosition().column;
 		int dr = target.getPosition().row - getPosition().row;
-		if (!(dr != 0 && Math.abs(dr) == Math.abs(dc)) || (dr * dc == 0))
+		if (!((dr != 0 && Math.abs(dr) == Math.abs(dc)) || (dr * dc == 0)))
 			return false;
 		dr = normaliseDirection(dr);
 		dc = normaliseDirection(dc);

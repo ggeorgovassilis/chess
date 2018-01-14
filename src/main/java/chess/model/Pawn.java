@@ -96,7 +96,8 @@ public class Pawn extends Piece {
 			return;
 		// two steps forward from baseline to empty square is ok if first step is also
 		// empty
-		if (vm.getTo() == twoStepsForward && vm.getFrom() == pawnBaseLine && board.getPieceAt(vm.getTo()) == null && board.getPieceAt(oneStepForward) == null)
+		if (vm.getTo() == twoStepsForward && vm.getFrom() == pawnBaseLine && board.getPieceAt(vm.getTo()) == null
+				&& board.getPieceAt(oneStepForward) == null)
 			return;
 		// a side move is ok if there is a piece to capture;
 		if ((vm.getTo() == captureMoveLeft || vm.getTo() == captureMoveRight) && vm.getCapturedPiece() != null)
@@ -106,10 +107,18 @@ public class Pawn extends Piece {
 
 	@Override
 	public boolean canTake(Piece target, Board board) {
-		int dc = Math.abs(getPosition().column-target.getPosition().column);
-		int dr = getPosition().row-target.getPosition().row;
-		int direction = getColour()==Colour.white?1:-1;
-		return dc*dr*direction==1;
+		int dc = Math.abs(getPosition().column - target.getPosition().column);
+		int dr = target.getPosition().row - getPosition().row;
+		int direction = getColour() == Colour.white ? 1 : -1;
+		// Rationale: pawn can take piece only diagonally;
+		// so must be dc=-1 or 1 and dr =-1 or 1
+		// dc's sign doesn't matter, only dr's sign matters because of different
+		// colour directions.
+		// White moves up, so dr=1, black moves down, so dr=-1
+		// For white to take: abs(dc)=1, dr=1, direction=1
+		// For black to take: abs(dc)=1, dr=-1, direction=-1
+		// thus abs(dc)*dr*direction == 1
+		return dc * dr * direction == 1;
 	}
-	
+
 }

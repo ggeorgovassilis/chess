@@ -44,7 +44,7 @@ public class ValidatedMove extends BaseMove {
 			return getPlayer() + " " + getMovingPiece() + " " + getFrom() + "x" + getCapturedPiece()+" "+getTo();
 	}
 	
-	public void validateMore(Engine engine) throws IllegalMove{
+	public void validatePieceMoveRules(Engine engine) throws IllegalMove{
 		getMovingPiece().validateMove(this, engine);
 	}
 
