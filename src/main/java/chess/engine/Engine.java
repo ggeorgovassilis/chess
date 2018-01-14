@@ -23,14 +23,14 @@ import chess.model.Bishop;
 
 public class Engine extends EngineSupport {
 
-	Map<Class, Double> pieceRatings = new HashMap<>();
+	final Map<Class<? extends Piece>, Double> pieceRatings = new HashMap<>();
 
 	public Engine() {
 		this.validations = new Validations(this);
 		pieceRatings.put(Pawn.class, 1.0);
 		pieceRatings.put(Knight.class, 3.0);
-		pieceRatings.put(Bishop.class, 4.0);
-		pieceRatings.put(Rook.class, 5.0);
+		pieceRatings.put(Bishop.class, 3.0);
+		pieceRatings.put(Rook.class, 4.0);
 		pieceRatings.put(Queen.class, 6.0);
 		pieceRatings.put(King.class, 0.0);
 	}
@@ -62,11 +62,10 @@ public class Engine extends EngineSupport {
 
 	public ValidatedMove makeMove(ValidatedMove move) {
 		validations.verifyThatMoveAppliesToThisBoard(move, board, turn);
-		board.removePiece(move.movingPiece);
-		move.movingPiece.setPosition(move.getTo());
 		if (move.getCapturedPiece() != null)
 			board.removePiece(move.capturedPiece);
-		board.placePiece(move.movingPiece);
+		board.movePieceTo(move.movingPiece, move.getTo());
+		move.movingPiece.setPosition(move.getTo());
 		incrementTurn();
 		return move;
 	}
@@ -76,11 +75,10 @@ public class Engine extends EngineSupport {
 			throw new RuntimeException("Wrong turn: " + move.getTurn() + " for " + move);
 		if (move.getBoard() != board)
 			throw new RuntimeException("Wrong board for move " + move);
-		board.removePiece(move.getMovingPiece());
+		board.movePieceTo(move.getMovingPiece(), move.getFrom());
 		if (move.getCapturedPiece() != null)
 			board.placePiece(move.getCapturedPiece());
 		move.getMovingPiece().setPosition(move.getFrom());
-		board.placePiece(move.getMovingPiece());
 		decreaseTurn();
 	}
 
@@ -100,32 +98,29 @@ public class Engine extends EngineSupport {
 
 	public boolean isChecked(Colour player) {
 		final King king = getKingOf(player);
-		return board.getPiecesFor(getOpponentOf(player)).stream().anyMatch((p) -> {
-			boolean b = p.canTake(king, this);
-			return b;
-		});
+		return board.getPiecesFor(getOpponentOf(player)).stream().anyMatch(p -> p.canTake(king, getBoard()));
+	}
+
+	public Piece getPieceThatChecksKing(Colour player) {
+		final King king = getKingOf(player);
+		List<Piece> checkers = board.getPiecesFor(getOpponentOf(player)).stream()
+				.filter((p) -> p.canTake(king, getBoard())).collect(Collectors.toList());
+		if (checkers.isEmpty())
+			return null;
+		return checkers.get(0);
 	}
 
 	public double getRating(Colour player) {
 		// rating is [0,1] with 0 meaning he lost and 1 he won
-
-		double rating = board.getPiecesFor(player).stream().map(p -> pieceRatings.get(p.getClass()))
-				.mapToDouble(Double::doubleValue).sum();
-
-		// halve rating if checked
+		double rating = 0.01*board.getPiecesFor(player).stream().mapToDouble(p->pieceRatings.get(p.getClass())).sum();
+		rating = rating * 0.01; // account for various pawn promotions
 		if (isChecked(player))
-			rating = rating * 0.9;
-		rating=rating*0.1; //account for various pawn promotions
-
-		// take square root if other player is checked (since value is <1,
-		// square-rooting increases score)
-		if (isChecked(getOpponentOf(player)))
-			rating = Math.sqrt(rating);
+			rating = rating*0.5;
 		return rating;
 	}
 
 	protected SearchResult getBestMoveFor(Colour colour, int depth, long endOfSearch) {
-		if (depth == MAX_SEARCH_DEPTH || System.currentTimeMillis()>endOfSearch) {
+		if (depth == MAX_SEARCH_DEPTH || System.currentTimeMillis() > endOfSearch) {
 			return new SearchResult(getRating(colour), null);
 		}
 		ValidatedMove myMoveThatGivesTheOtherPlayerHisLowestScore = null;
@@ -139,7 +134,8 @@ public class Engine extends EngineSupport {
 				for (ValidatedMove move = moves.next(); moves.hasNext(); move = moves.next()) {
 					makeMove(move);
 					if (!isChecked(move.getPlayer())) {
-						SearchResult bestMoveForOtherPlayer = getBestMoveFor(getOpponentOf(colour), depth + 1, endOfSearch);
+						SearchResult bestMoveForOtherPlayer = getBestMoveFor(getOpponentOf(colour), depth + 1,
+								endOfSearch);
 						if (bestMoveForOtherPlayer.rating < bestScoreForOtherPlayer) {
 							bestScoreForOtherPlayer = bestMoveForOtherPlayer.rating;
 							myMoveThatGivesTheOtherPlayerHisLowestScore = move;
@@ -152,7 +148,7 @@ public class Engine extends EngineSupport {
 	}
 
 	public ValidatedMove getBestMoveFor(Colour colour) {
-		return getBestMoveFor(colour, 0, System.currentTimeMillis()+MAX_SEARCH_TIME_MS).move;
+		return getBestMoveFor(colour, 0, System.currentTimeMillis() + MAX_SEARCH_TIME_MS).move;
 	}
 
 }

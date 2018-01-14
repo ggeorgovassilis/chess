@@ -69,9 +69,9 @@ public class King extends Piece {
 	}
 
 	@Override
-	public boolean canTake(Piece p, Engine engine) {
-		int dc = Math.abs(p.getPosition().column - getPosition().column);
-		int dr = Math.abs(p.getPosition().row - getPosition().row);
+	public boolean canTake(Piece target, Board board) {
+		int dc = Math.abs(target.getPosition().column - getPosition().column);
+		int dr = Math.abs(target.getPosition().row - getPosition().row);
 		return dc<=1 && dr<=1;
 	}
 

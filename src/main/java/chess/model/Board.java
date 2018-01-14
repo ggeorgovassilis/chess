@@ -30,6 +30,11 @@ public class Board {
 		getPiecesFor(piece.getColour()).add(piece);
 	}
 	
+	public void movePieceTo(Piece piece, Position to) 	{
+		board[piece.getPosition().column][piece.getPosition().row]=null;
+		board[to.column][to.row]=piece;
+	}
+	
 	public void removePiece(Piece piece) {
 		Position pos = piece.getPosition();
 		board[pos.column][pos.row] = null;

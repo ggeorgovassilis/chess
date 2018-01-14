@@ -57,22 +57,15 @@ public class Bishop extends Piece {
 	}
 
 	@Override
-	public boolean canTake(Piece p, Engine engine) {
-		int dc = p.getPosition().column - getPosition().column;
-		int dr = p.getPosition().row - getPosition().row;
+	public boolean canTake(Piece target, Board board) {
+		int dc = target.getPosition().column - getPosition().column;
+		int dr = target.getPosition().row - getPosition().row;
 		if (Math.abs(dc) != Math.abs(dr))
 			return false;
-		dc = dc > 0 ? 1 : -1;
-		dr = dr > 0 ? 1 : -1;
+		dc = normaliseDirection(dc);
+		dr = normaliseDirection(dr);
 		Position pos = getPosition();
-		while (true) {
-			pos = Position.position(pos.column + dc, pos.row + dr);
-			Piece piece = engine.getBoard().getPieceAt(pos);
-			if (piece == p)
-				return true;
-			if (piece != null)
-				return false;
-		}
+		return canTake(target, board, dc, dr);
 	}
 
 }

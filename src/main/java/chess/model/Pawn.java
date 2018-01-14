@@ -105,11 +105,11 @@ public class Pawn extends Piece {
 	}
 
 	@Override
-	public boolean canTake(Piece p, Engine engine) {
-		int dc = Math.abs(getPosition().column-p.getPosition().column);
-		int dr = getPosition().row-p.getPosition().row;
+	public boolean canTake(Piece target, Board board) {
+		int dc = Math.abs(getPosition().column-target.getPosition().column);
+		int dr = getPosition().row-target.getPosition().row;
 		int direction = getColour()==Colour.white?1:-1;
 		return dc*dr*direction==1;
 	}
-
+	
 }

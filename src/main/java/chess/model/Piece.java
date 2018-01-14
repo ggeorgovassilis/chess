@@ -12,37 +12,38 @@ import chess.engine.ValidatedMove;
 
 public abstract class Piece {
 
-	abstract class MoveProducer implements Iterator<Move>{
+	abstract class MoveProducer implements Iterator<Move> {
 
 		int moveCounter = 0;
-		Move nextMove=null;
+		Move nextMove = null;
+
 		abstract int getMaxMoveCounter();
+
 		abstract Position getDestinationPosition(int moveCounter);
 
 		protected Move getNextMove() {
-			while (moveCounter<getMaxMoveCounter()) {
+			while (moveCounter < getMaxMoveCounter()) {
 				Position p = getDestinationPosition(moveCounter);
 				moveCounter++;
-				if (p==null)
+				if (p == null)
 					throw new RuntimeException("Not a move");
-				if (p!=Position.illegalPosition)
+				if (p != Position.illegalPosition)
 					return new BaseMove(colour, getPosition(), p);
 			}
 			return null;
 		}
-		
+
 		protected void initialise() {
 		};
-		
+
 		public void postInitialise() {
 			initialise();
 			nextMove = getNextMove();
 		}
-		
 
 		@Override
 		public boolean hasNext() {
-			return nextMove!=null;
+			return nextMove != null;
 		}
 
 		@Override
@@ -52,7 +53,7 @@ public abstract class Piece {
 			return move;
 		}
 	};
-	
+
 	public enum Colour {
 		black, white
 	};
@@ -60,8 +61,6 @@ public abstract class Piece {
 	protected final Colour colour;
 	protected Position position;
 
-	
-	
 	public Position getPosition() {
 		return position;
 	}
@@ -71,6 +70,7 @@ public abstract class Piece {
 	}
 
 	public abstract String getShortNotation();
+
 	public abstract String getSymbol();
 
 	protected Piece(Colour colour) {
@@ -80,23 +80,23 @@ public abstract class Piece {
 	public Colour getColour() {
 		return colour;
 	}
-	
+
 	@Override
 	public String toString() {
 		return getShortNotation();
 	}
-	
+
 	protected abstract MoveProducer generateMoves();
-	
-	public Iterator<Move> getPossibleMoves(){
+
+	public Iterator<Move> getPossibleMoves() {
 		MoveProducer mp = generateMoves();
 		mp.postInitialise();
 		return mp;
 	}
-	
-	protected void validateContinuousMove(ValidatedMove vm,
-			BiPredicate<Integer, Integer> moveValidator, BiPredicate<Integer, Integer> normalisedMoveValidator) {
-		if ((vm.getMovingPiece()!=this)) {
+
+	protected void validateContinuousMove(ValidatedMove vm, BiPredicate<Integer, Integer> moveValidator,
+			BiPredicate<Integer, Integer> normalisedMoveValidator) {
+		if ((vm.getMovingPiece() != this)) {
 			throw new IllegalMove("Move doesn't apply to this piece", vm);
 		}
 		Board board = vm.getBoard();
@@ -123,8 +123,28 @@ public abstract class Piece {
 			throw new IllegalMove("This is not a valid rook move", vm);
 	}
 
-	
+	protected int normaliseDirection(int d) {
+		if (d < 0)
+			return -1;
+		if (d > 0)
+			return 1;
+		return 0;
+	}
+
+	protected boolean canTake(Piece target, Board board, int dc, int dr) {
+		Position pos = getPosition();
+		Position targetPosition = target.getPosition();
+		while (true) {
+			pos = Position.position(pos.column + dc, pos.row + dr);
+			if (pos == targetPosition)
+				return true;
+			Piece piece = board.getPieceAt(pos);
+			if (piece != null)
+				return false;
+		}
+	}
+
 	public abstract void validateMove(ValidatedMove vm, Engine engine) throws IllegalMove;
-	
-	public abstract boolean canTake(Piece p, Engine engine);
+
+	public abstract boolean canTake(Piece target, Board board);
 }

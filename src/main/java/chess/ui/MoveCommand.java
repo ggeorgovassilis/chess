@@ -47,8 +47,8 @@ public class MoveCommand extends Command {
 		}
 		console.println("Turn " + engine.getTurn());
 		if (engine.isChecked(Colour.white))
-			System.out.println("White checked");
+			System.out.println("White checked by "+engine.getPieceThatChecksKing(Colour.white)+" "+engine.getPieceThatChecksKing(Colour.white).getPosition());
 		if (engine.isChecked(Colour.black))
-			System.out.println("Black checked");
+			System.out.println("Black checked "+engine.getPieceThatChecksKing(Colour.black)+" "+engine.getPieceThatChecksKing(Colour.black).getPosition());
 	}
 }

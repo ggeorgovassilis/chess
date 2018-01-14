@@ -4,14 +4,14 @@ public class Position {
 
 	public final int row;
 	public final int column;
-	protected Position north;
-	protected Position south;
-	protected Position east;
-	protected Position west;
-	protected Position northEast;
-	protected Position southEast;
-	protected Position southWest;
-	protected Position northWest;
+	private Position north;
+	private Position south;
+	private Position east;
+	private Position west;
+	private Position northEast;
+	private Position southEast;
+	private Position southWest;
+	private Position northWest;
 
 	protected final static Position[][] positions = new Position[8][8];
 	protected final static String[] cols = { "a", "b", "c", "d", "e", "f", "g", "h" };
@@ -35,7 +35,7 @@ public class Position {
 		illegalPosition.north = illegalPosition.south = illegalPosition.east = illegalPosition.west = illegalPosition.northEast = illegalPosition.southEast = illegalPosition.southWest = illegalPosition.northWest = illegalPosition;
 	}
 
-	protected Position(int column, int row) {
+	private Position(int column, int row) {
 		this.column = column;
 		this.row = row;
 	}

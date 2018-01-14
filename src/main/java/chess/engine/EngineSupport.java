@@ -17,8 +17,8 @@ import chess.model.Piece.Colour;
 
 abstract class EngineSupport {
 
-	protected final int MAX_SEARCH_DEPTH = 5;
-	protected final long MAX_SEARCH_TIME_MS = 20000; 
+	protected final int MAX_SEARCH_DEPTH = 4;
+	protected final long MAX_SEARCH_TIME_MS = 30000; 
 	protected Board board;
 	protected int turn;
 	protected Validations validations;

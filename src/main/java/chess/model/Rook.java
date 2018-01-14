@@ -27,27 +27,28 @@ public class Rook extends Piece {
 	@Override
 	protected MoveProducer generateMoves() {
 		return new MoveProducer() {
-			
+
 			Position[] positions;
+
 			@Override
 			int getMaxMoveCounter() {
 				return 32;
 			}
-			
+
 			@Override
-			protected  void initialise() {
+			protected void initialise() {
 				Position p = getPosition();
-				positions = new Position[]{p,p,p,p};
+				positions = new Position[] { p, p, p, p };
 			}
-			
+
 			@Override
 			Position getDestinationPosition(int moveCounter) {
-				int p = moveCounter%positions.length;
-				if (p==0) {
-					positions[0] = positions[0].north;
-					positions[1] = positions[1].east;
-					positions[2] = positions[2].south;
-					positions[3] = positions[3].west;
+				int p = moveCounter % positions.length;
+				if (p == 0) {
+					positions[0] = positions[0].north();
+					positions[1] = positions[1].east();
+					positions[2] = positions[2].south();
+					positions[3] = positions[3].west();
 				}
 				return positions[p];
 			}
@@ -58,23 +59,16 @@ public class Rook extends Piece {
 	public void validateMove(ValidatedMove vm, Engine engine) throws IllegalMove {
 		validateContinuousMove(vm, (dCol, dRow) -> true, (dCol, dRow) -> dRow * dCol == 0);
 	}
-	
-	@Override
-	public boolean canTake(Piece p, Engine engine) {
-		int dc = p.getPosition().column-getPosition().column;
-		int dr = p.getPosition().row-getPosition().row;
-		if (dc*dr!=0)
-			return false;
-		Position pos = getPosition();
-		while(true){
-			pos = Position.position(pos.column+dc, pos.row+dr);
-			Piece piece = engine.getBoard().getPieceAt(pos);
-			if (piece == p)
-				return true;
-			if (piece!=null)
-				return false;
-		}
-	}
 
+	@Override
+	public boolean canTake(Piece target, Board board) {
+		int dc = target.getPosition().column - getPosition().column;
+		int dr = target.getPosition().row - getPosition().row;
+		if (dc * dr != 0)
+			return false;
+		dr = normaliseDirection(dr);
+		dc = normaliseDirection(dc);
+		return canTake(target, board, dc, dr);
+	}
 
 }
