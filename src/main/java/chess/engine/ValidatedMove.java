@@ -3,7 +3,6 @@ package chess.engine;
 import chess.model.Board;
 import chess.model.IllegalMove;
 import chess.model.Piece;
-import chess.model.Position;
 
 public class ValidatedMove extends BaseMove {
 

@@ -1,8 +1,6 @@
 package chess.model;
 
-import java.io.ObjectInputStream.GetField;
 import java.util.Iterator;
-import java.util.List;
 import java.util.function.BiPredicate;
 
 import chess.engine.BaseMove;
@@ -104,14 +102,8 @@ public abstract class Piece {
 		int dCol = vm.getTo().column - vm.getFrom().column;
 		if (!moveValidator.test(dCol, dRow))
 			throw new IllegalMove("This isn't a valid move", vm);
-		if (dRow < 0)
-			dRow = -1;
-		if (dRow > 0)
-			dRow = 1;
-		if (dCol < 0)
-			dCol = -1;
-		if (dCol > 0)
-			dCol = 1;
+		dRow = normaliseDirection(dRow);
+		dCol = normaliseDirection(dCol);
 		if (!normalisedMoveValidator.test(dCol, dRow))
 			throw new IllegalMove("This isn't a valid move", vm);
 		Position next = vm.getFrom();
@@ -124,11 +116,7 @@ public abstract class Piece {
 	}
 
 	protected int normaliseDirection(int d) {
-		if (d < 0)
-			return -1;
-		if (d > 0)
-			return 1;
-		return 0;
+		return Integer.signum(d);
 	}
 
 	protected boolean canTake(Piece target, Board board, int dc, int dr) {

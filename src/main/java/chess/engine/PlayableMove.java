@@ -1,8 +1,5 @@
 package chess.engine;
 
-import chess.model.Board;
-import chess.model.Piece;
-
 /**
  * This move has been validated that it doesn't leave own's king checked
  *

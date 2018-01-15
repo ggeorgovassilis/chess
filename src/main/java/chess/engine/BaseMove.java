@@ -1,6 +1,5 @@
 package chess.engine;
 
-import chess.model.Piece;
 import chess.model.Piece.Colour;
 import chess.model.Position;
 

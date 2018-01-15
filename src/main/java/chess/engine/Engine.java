@@ -1,191 +1,29 @@
 package chess.engine;
 
-import chess.model.IllegalMove;
-import chess.model.King;
-import chess.model.Knight;
-import chess.model.Pawn;
+import java.util.List;
+
+import chess.model.Board;
 import chess.model.Piece;
 import chess.model.Piece.Colour;
-import chess.model.Position;
-import chess.model.Queen;
-import chess.model.Rook;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Spliterator;
-import java.util.Spliterators;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
+public interface Engine {
 
-import chess.model.Bishop;
+	List<PlayableMove> getPlayableMovesFor(Piece piece);
 
-public class Engine extends EngineSupport {
+	boolean isChecked(Colour player);
 
-	final Map<Class<? extends Piece>, Double> pieceRatings = new HashMap<>();
-
-	public Engine() {
-		this.validations = new Validations(this);
-		pieceRatings.put(Pawn.class, 1.0);
-		pieceRatings.put(Knight.class, 3.0);
-		pieceRatings.put(Bishop.class, 3.0);
-		pieceRatings.put(Rook.class, 4.0);
-		pieceRatings.put(Queen.class, 6.0);
-		pieceRatings.put(King.class, 0.0);
-	}
-
-	public PlayableMove validateForPlayer(Move move) {
-		ValidatedMove vm = validatePieceMoves(move);
-		if (wouldPlayerBeCheckedIfHePlayedMove(vm))
-			throw new IllegalMove(move.getPlayer() + " would be checked", move);
-		return new PlayableMove(vm);
-	}
-
-	protected ValidatedMove validateBasicBoardRules(Move move) {
-		return validations.validateBasic(move, board, turn);
-	}
-
-	protected ValidatedMove validatePieceMoves(Move move) {
-		ValidatedMove vm = validateBasicBoardRules(move);
-		vm.validatePieceMoveRules(this);
-		return vm;
-	}
-
-	public boolean wouldPlayerBeCheckedIfHePlayedMove(ValidatedMove move) {
-		Colour player = move.getPlayer();
-		makeMoveWithoutCheckingForCheck(move);
-		boolean wouldMovingPlayerBeChecked = isChecked(player);
-		undoMove(move);
-		return wouldMovingPlayerBeChecked;
-	}
-
-	protected ValidatedMove makeMoveWithoutCheckingForCheck(ValidatedMove move) {
-		validations.verifyThatMoveAppliesToThisBoard(move, board, turn);
-		if (move.getCapturedPiece() != null)
-			board.removePiece(move.capturedPiece);
-		board.movePieceTo(move.movingPiece, move.getTo());
-		move.movingPiece.setPosition(move.getTo());
-		incrementTurn();
-		return move;
-	}
-
-	public ValidatedMove makeMove(PlayableMove move) {
-		validations.verifyThatMoveAppliesToThisBoard(move, board, turn);
-		if (move.getCapturedPiece() != null)
-			board.removePiece(move.capturedPiece);
-		board.movePieceTo(move.movingPiece, move.getTo());
-		move.movingPiece.setPosition(move.getTo());
-		incrementTurn();
-		return move;
-	}
-
-	public void undoMove(ValidatedMove move) {
-		if (move.getTurn() != turn - 1)
-			throw new RuntimeException("Wrong turn: " + move.getTurn() + " for " + move);
-		if (move.getBoard() != board)
-			throw new RuntimeException("Wrong board for move " + move);
-		board.movePieceTo(move.getMovingPiece(), move.getFrom());
-		if (move.getCapturedPiece() != null)
-			board.placePiece(move.getCapturedPiece());
-		move.getMovingPiece().setPosition(move.getFrom());
-		decreaseTurn();
-	}
-
-	public ValidatedMove isValid(Move move) {
-		try {
-			return validatePieceMoves(move);
-		} catch (IllegalMove e) {
-			return null;
-		}
-	}
-
-	private Iterator<ValidatedMove> getValidMovesFor(Piece piece) {
-		FilterIterator<Move, ValidatedMove> filterator = new FilterIterator<>(piece.getPossibleMoves(),
-				move -> isValid(move));
-		return filterator;
-	}
-
-	public List<PlayableMove> getPlayableMovesFor(Piece piece) {
-		Stream<Move> stream=StreamSupport.stream(
-				Spliterators.spliteratorUnknownSize(piece.getPossibleMoves(), Spliterator.ORDERED), false);
-		List<ValidatedMove> validatedMoves = stream.map(move->isValid(move)).filter(vm->vm!=null).collect(Collectors.toList());
-		List<PlayableMove> playableMoves = new ArrayList<>();
-		for (ValidatedMove vm:validatedMoves) {
-			makeMoveWithoutCheckingForCheck(vm);
-			boolean wouldPlayerBeCheked = isChecked(piece.getColour());
-			if (!wouldPlayerBeCheked)
-				playableMoves.add(new PlayableMove(vm));
-			undoMove(vm);
-		}
-		return playableMoves;
-	}
-
-	public boolean isChecked(Colour player) {
-		final King king = getKingOf(player);
-		return board.getPiecesFor(getOpponentOf(player)).stream().anyMatch(p -> p.canTake(king, getBoard()));
-	}
+	PlayableMove getBestMoveFor(Colour colour);
 	
-	public Piece getPieceThatChecksKing(Colour player) {
-		final King king = getKingOf(player);
-		List<Piece> checkers = board.getPiecesFor(getOpponentOf(player)).stream()
-				.filter((p) -> p.canTake(king, getBoard())).collect(Collectors.toList());
-		if (checkers.isEmpty())
-			return null;
-		return checkers.get(0);
-	}
+	PlayableMove validateThatMoveIsPlayable(Move move);
 
-	public double computeRatingFor(Colour player) {
-		// rating is [0,1] with 0 meaning he lost and 1 he won
-		double rating = 0.01
-				* board.getPiecesFor(player).stream().mapToDouble(p -> pieceRatings.get(p.getClass())).sum();
-		rating = rating * 0.01; // account for various pawn promotions
-		if (isChecked(player))
-			rating = rating * 0.5;
-		return rating;
-	}
+	Board getBoard();
+	
+	void undoMove(ValidatedMove move);
 
-	protected SearchResult getBestMoveFor(Colour me, int depth, long endOfSearch) {
-		if (depth == MAX_SEARCH_DEPTH || System.currentTimeMillis() > endOfSearch) {
-			return new SearchResult(computeRatingFor(me), null);
-		}
-		Colour opponent = getOpponentOf(me);
-		PlayableMove myMoveThatGivesOpponentHisLowestScore = null;
-		// copy of pieces because MinMax will modify the piece set -> concurrent
-		// modification exception
-		List<Piece> pieces = new ArrayList<>(board.getPiecesFor(me));
-		double bestScoreForOpponent = 1.0;
-		boolean iHavePlayableMoves = false;
-		for (Piece piece : pieces) {
-			Iterator<ValidatedMove> myMoves = getValidMovesFor(piece);
-			if (!myMoves.hasNext())
-				continue;
-			for (ValidatedMove move = myMoves.next(); myMoves.hasNext(); move = myMoves.next()) {
-				makeMoveWithoutCheckingForCheck(move);
-				if (!isChecked(move.getPlayer())) {
-					iHavePlayableMoves = true;
-					SearchResult bestMoveForOpponent = getBestMoveFor(opponent, depth + 1, endOfSearch);
-					if (bestMoveForOpponent.rating <= bestScoreForOpponent) {
-						bestScoreForOpponent = bestMoveForOpponent.rating;
-						myMoveThatGivesOpponentHisLowestScore = new PlayableMove(move);
-					}
-				}
-				undoMove(move);
-			}
-		}
-		if (!iHavePlayableMoves && isChecked(me))
-			bestScoreForOpponent = 1.0;
-		else if (!iHavePlayableMoves)
-			bestScoreForOpponent = 0.5;
-		return new SearchResult(1.0 - bestScoreForOpponent, myMoveThatGivesOpponentHisLowestScore);
-	}
-
-	public PlayableMove getBestMoveFor(Colour colour) {
-		return getBestMoveFor(colour, 0, System.currentTimeMillis() + MAX_SEARCH_TIME_MS).move;
-	}
+	int getTurn();
+	
+	Piece getPieceThatChecksKing(Colour colour);
+	
+	PlayableMove playMove(PlayableMove move);
 
 }

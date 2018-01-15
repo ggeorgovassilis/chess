@@ -1,12 +1,6 @@
 package chess.model;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
-import chess.engine.BaseMove;
 import chess.engine.Engine;
-import chess.engine.Move;
 import chess.engine.ValidatedMove;
 
 public class Bishop extends Piece {
@@ -64,7 +58,6 @@ public class Bishop extends Piece {
 			return false;
 		dc = normaliseDirection(dc);
 		dr = normaliseDirection(dr);
-		Position pos = getPosition();
 		return canTake(target, board, dc, dr);
 	}
 

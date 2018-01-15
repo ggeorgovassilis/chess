@@ -4,7 +4,6 @@ import chess.engine.BaseMove;
 import chess.engine.Engine;
 import chess.engine.Move;
 import chess.engine.PlayableMove;
-import chess.engine.ValidatedMove;
 import chess.model.Piece.Colour;
 import chess.model.Position;
 
@@ -27,8 +26,8 @@ public class MoveCommand extends Command {
 
 	@Override
 	public void execute() {
-		PlayableMove validMove = engine.validateForPlayer(this.move);
-		engine.makeMove(validMove);
+		PlayableMove validMove = engine.validateThatMoveIsPlayable(this.move);
+		engine.playMove(validMove);
 		console.setLastMove(validMove);
 		console.drawBoard();
 		console.drawPieces();
@@ -39,7 +38,7 @@ public class MoveCommand extends Command {
 		timestamp+=System.currentTimeMillis();
 		if (responseMove != null) {
 			console.println(responseMove.toString()+", "+timestamp+" ms");
-			engine.makeMove(responseMove);
+			engine.playMove(responseMove);
 			console.drawBoard();
 			console.drawPieces();
 			console.flush();

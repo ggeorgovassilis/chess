@@ -1,11 +1,6 @@
 package chess.model;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import chess.engine.BaseMove;
 import chess.engine.Engine;
-import chess.engine.Move;
 import chess.engine.ValidatedMove;
 
 public class Rook extends Piece {

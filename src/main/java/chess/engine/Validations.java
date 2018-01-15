@@ -2,24 +2,8 @@ package chess.engine;
 
 import chess.model.Board;
 import chess.model.IllegalMove;
-import chess.model.King;
-import chess.model.Knight;
-import chess.model.Pawn;
 import chess.model.Piece;
 import chess.model.Position;
-import chess.model.Queen;
-import chess.model.Rook;
-import chess.model.Piece.Colour;
-import static chess.model.Position.*;
-
-import java.util.function.BiConsumer;
-import java.util.function.BiPredicate;
-import java.util.function.IntBinaryOperator;
-import java.util.function.IntSupplier;
-import java.util.function.ToIntFunction;
-
-import chess.model.Bishop;
-
 public class Validations {
 
 	protected Engine engine;

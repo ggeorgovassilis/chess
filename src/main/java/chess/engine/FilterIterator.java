@@ -2,7 +2,6 @@ package chess.engine;
 
 import java.util.Iterator;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 public class FilterIterator<S, T> implements Iterator<T> {
 

@@ -1,11 +1,8 @@
 package chess.ui;
 
-import chess.engine.BaseMove;
 import chess.engine.Engine;
-import chess.engine.Move;
 import chess.engine.ValidatedMove;
 import chess.model.Piece.Colour;
-import chess.model.Position;
 
 public class UndoCommand extends Command{
 

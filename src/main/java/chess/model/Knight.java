@@ -1,15 +1,7 @@
 package chess.model;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.stream.Stream;
-
-import chess.engine.BaseMove;
 import chess.engine.Engine;
-import chess.engine.Move;
 import chess.engine.ValidatedMove;
-import chess.model.Piece.MoveProducer;
 
 public class Knight extends Piece {
 

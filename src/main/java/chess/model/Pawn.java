@@ -2,13 +2,8 @@ package chess.model;
 
 import static chess.model.Position.ROW;
 
-import java.util.Iterator;
-
 import chess.engine.Engine;
-import chess.engine.Move;
 import chess.engine.ValidatedMove;
-import chess.model.Piece.Colour;
-import chess.model.Piece.MoveProducer;
 
 public class Pawn extends Piece {
 
