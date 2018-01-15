@@ -6,15 +6,17 @@ import chess.model.Knight;
 import chess.model.Pawn;
 import chess.model.Piece;
 import chess.model.Piece.Colour;
+import chess.model.Position;
 import chess.model.Queen;
 import chess.model.Rook;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Collectors;
@@ -115,12 +117,11 @@ public class SimpleEngineImpl extends EngineSupport implements Engine {
 
 	@Override
 	public List<PlayableMove> getPlayableMovesFor(Piece piece) {
-		Stream<Move> stream = StreamSupport
-				.stream(Spliterators.spliteratorUnknownSize(piece.getPossibleMoves(), Spliterator.ORDERED), false);
-		List<ValidatedMove> validatedMoves = stream.map(move -> isValid(move)).filter(vm -> vm != null)
-				.collect(Collectors.toList());
+		Stream<Move> stream=StreamSupport.stream(
+				Spliterators.spliteratorUnknownSize(piece.getPossibleMoves(), Spliterator.ORDERED), false);
+		List<ValidatedMove> validatedMoves = stream.map(move->isValid(move)).filter(vm->vm!=null).collect(Collectors.toList());
 		List<PlayableMove> playableMoves = new ArrayList<>();
-		for (ValidatedMove vm : validatedMoves) {
+		for (ValidatedMove vm:validatedMoves) {
 			makeMoveWithoutCheckingForCheck(vm);
 			boolean wouldPlayerBeCheked = isChecked(piece.getColour());
 			if (!wouldPlayerBeCheked)
@@ -135,7 +136,7 @@ public class SimpleEngineImpl extends EngineSupport implements Engine {
 		final King king = getKingOf(player);
 		return board.getPiecesFor(getOpponentOf(player)).stream().anyMatch(p -> p.canTake(king, getBoard()));
 	}
-
+	
 	@Override
 	public Piece getPieceThatChecksKing(Colour player) {
 		final King king = getKingOf(player);
@@ -151,56 +152,48 @@ public class SimpleEngineImpl extends EngineSupport implements Engine {
 		// max score for pieces is 34, so: 1/34
 		// and halve that because a pat would be 0.5, so max score from pieces
 		// can't be better than a pat
-		double rating = (1.0 / 68.0)
-				* board.getPiecesFor(player).stream().mapToDouble(p -> pieceRatings.get(p.getClass())).sum();
+		double rating = 
+				(1.0/68.0)*board.getPiecesFor(player).stream().mapToDouble(p -> pieceRatings.get(p.getClass())).sum();
 		return rating;
 	}
-	
-	List<ValidatedMove> getAllMovesFor(Colour player){
-		final List<ValidatedMove> moves = new ArrayList<ValidatedMove>();
-		board.getPiecesFor(player).parallelStream().forEach(piece->{
-			piece.getPossibleMoves().forEachRemaining(move->{
-				ValidatedMove vm = isValid(move);
-				if (vm!=null) synchronized (moves) {
-					moves.add(vm);
-				}
-			});
-		});
-		return moves;
-	}
 
-	protected SearchResult getBestMoveFor(Colour me, List<ValidatedMove> movesToCheck, int depth, long endOfSearch) {
+	protected SearchResult getBestMoveFor(Colour me, int depth, long endOfSearch) {
 		if (depth == MAX_SEARCH_DEPTH || System.currentTimeMillis() > endOfSearch) {
 			return new SearchResult(computeRatingFor(me), null);
 		}
 		Colour opponent = getOpponentOf(me);
 		PlayableMove myMoveThatGivesOpponentHisLowestScore = null;
+		// copy of pieces because MinMax will modify the piece set -> concurrent
+		// modification exception
+		List<Piece> pieces = new ArrayList<>(board.getPiecesFor(me));
 		double bestScoreForOpponent = 1.0;
 		boolean iHavePlayableMoves = false;
-		for (ValidatedMove move : movesToCheck) {
-			makeMoveWithoutCheckingForCheck(move);
-			if (!isChecked(move.getPlayer())) {
-				iHavePlayableMoves = true;
-				//optimisation: we don't need moves at the last depth where only leafs are rated
-				List<ValidatedMove> movesForPlayer = depth<MAX_SEARCH_DEPTH-1?getAllMovesFor(opponent):null;
-				SearchResult bestMoveForOpponent = getBestMoveFor(opponent, movesForPlayer, depth + 1, endOfSearch);
-				if (bestMoveForOpponent.rating <= bestScoreForOpponent) {
-					bestScoreForOpponent = bestMoveForOpponent.rating;
-					myMoveThatGivesOpponentHisLowestScore = new PlayableMove(move);
+		for (Piece piece : pieces) {
+			Iterator<ValidatedMove> myMoves = getValidMovesFor(piece);
+			if (!myMoves.hasNext())
+				continue;
+			for (ValidatedMove move = myMoves.next(); myMoves.hasNext(); move = myMoves.next()) {
+				makeMoveWithoutCheckingForCheck(move);
+				if (!isChecked(move.getPlayer())) {
+					iHavePlayableMoves = true;
+					SearchResult bestMoveForOpponent = getBestMoveFor(opponent, depth + 1, endOfSearch);
+					if (bestMoveForOpponent.rating <= bestScoreForOpponent) {
+						bestScoreForOpponent = bestMoveForOpponent.rating;
+						myMoveThatGivesOpponentHisLowestScore = new PlayableMove(move);
+					}
 				}
+				undoMove(move);
 			}
-			undoMove(move);
 		}
 		if (!iHavePlayableMoves) {
-			bestScoreForOpponent = isChecked(me) ? 1.0 : 0.5;
+			bestScoreForOpponent=isChecked(me)?1.0:0.5;
 		}
 		return new SearchResult(1.0 - bestScoreForOpponent, myMoveThatGivesOpponentHisLowestScore);
 	}
 
 	@Override
-	public PlayableMove getBestMoveFor(Colour player) {
-		List<ValidatedMove> movesForPlayer = getAllMovesFor(player);
-		return getBestMoveFor(player, movesForPlayer, 0, System.currentTimeMillis() + MAX_SEARCH_TIME_MS).move;
+	public PlayableMove getBestMoveFor(Colour colour) {
+		return getBestMoveFor(colour, 0, System.currentTimeMillis() + MAX_SEARCH_TIME_MS).move;
 	}
 
 }
