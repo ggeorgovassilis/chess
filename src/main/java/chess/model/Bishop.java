@@ -21,7 +21,7 @@ public class Bishop extends Piece {
 
 	@Override
 	protected MoveProducer generateMoves() {
-		return new MoveProducer() {
+		return new MoveProducer(getPosition()) {
 
 			@Override
 			int getMaxMoveCounter() {
@@ -30,13 +30,12 @@ public class Bishop extends Piece {
 
 			@Override
 			Position getDestinationPosition(int moveCounter) {
-				Position p = getPosition();
 				int direction = moveCounter % 4;
 				int dColumn = direction % 2 == 0 ? -1 : 1;
 				int dRow = direction < 2 ? -1 : 1;
 				int radius = moveCounter / 4;
-				int column = p.column;
-				int row = p.row;
+				int column = startingPosition.column;
+				int row = startingPosition.row;
 				column += radius * dColumn;
 				row += radius * dRow;
 				return Position.position(column, row);
@@ -59,6 +58,11 @@ public class Bishop extends Piece {
 		dc = normaliseDirection(dc);
 		dr = normaliseDirection(dr);
 		return canTake(target, board, dc, dr);
+	}
+
+	@Override
+	public double getRatingValue() {
+		return 3;
 	}
 
 }

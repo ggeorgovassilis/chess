@@ -22,7 +22,7 @@ public class Knight extends Piece {
 	@Override
 	protected MoveProducer generateMoves() {
 
-		return new MoveProducer() {
+		return new MoveProducer(getPosition()) {
 
 			@Override
 			int getMaxMoveCounter() {
@@ -72,6 +72,11 @@ public class Knight extends Piece {
 		int dc = Math.abs(target.getPosition().column-getPosition().column);
 		int dr = Math.abs(target.getPosition().row-getPosition().row);
 		return (dr*dc==2);
+	}
+
+	@Override
+	public double getRatingValue() {
+		return 2;
 	}
 
 }

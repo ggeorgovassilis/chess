@@ -14,6 +14,11 @@ public abstract class Piece {
 
 		int moveCounter = 0;
 		Move nextMove = null;
+		final Position startingPosition;
+		
+		public MoveProducer(Position p) {
+			this.startingPosition = p;
+		}
 
 		abstract int getMaxMoveCounter();
 
@@ -135,4 +140,6 @@ public abstract class Piece {
 	public abstract void validateMove(ValidatedMove vm, Engine engine) throws IllegalMove;
 
 	public abstract boolean canTake(Piece target, Board board);
+	
+	public abstract double getRatingValue();
 }

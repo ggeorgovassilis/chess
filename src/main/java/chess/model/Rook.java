@@ -21,7 +21,7 @@ public class Rook extends Piece {
 
 	@Override
 	protected MoveProducer generateMoves() {
-		return new MoveProducer() {
+		return new MoveProducer(getPosition()) {
 
 			Position[] positions;
 
@@ -32,7 +32,7 @@ public class Rook extends Piece {
 
 			@Override
 			protected void initialise() {
-				Position p = getPosition();
+				Position p = startingPosition;
 				positions = new Position[] { p, p, p, p };
 			}
 
@@ -64,6 +64,11 @@ public class Rook extends Piece {
 		dr = normaliseDirection(dr);
 		dc = normaliseDirection(dc);
 		return canTake(target, board, dc, dr);
+	}
+
+	@Override
+	public double getRatingValue() {
+		return 4;
 	}
 
 }

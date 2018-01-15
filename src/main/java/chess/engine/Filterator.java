@@ -3,13 +3,24 @@ package chess.engine;
 import java.util.Iterator;
 import java.util.function.Function;
 
-public class FilterIterator<S, T> implements Iterator<T> {
+/**
+ * Iterator that takes a source iterator as input and transforms its elements into a different type.
+ * Nulls returned by the source iterator will be ignored.
+ * @param <S> Type of the source iterator
+ * @param <T> Returned  type
+ */
+public class Filterator<S, T> implements Iterator<T> {
 
 	final Iterator<S> source;
 	final Function<S, T> mapper;
 	T next = null;
 
-	public FilterIterator(Iterator<S> source, Function<S, T> mapper) {
+	/**
+	 * 
+	 * @param source Source iterator, returns <S>-typed elements
+	 * @param mapper Mapper that transforms <S> to <T>
+	 */
+	public Filterator(Iterator<S> source, Function<S, T> mapper) {
 		this.source = source;
 		this.mapper = mapper;
 		this.next = getNextTargetItem();
@@ -26,7 +37,7 @@ public class FilterIterator<S, T> implements Iterator<T> {
 		while (source.hasNext()) {
 			S nextSourceItem = getNextSourceItem();
 			if (nextSourceItem == null)
-				return null;
+				continue;
 			T nextTarget = mapper.apply(nextSourceItem);
 			if (nextTarget!=null)
 				return nextTarget;

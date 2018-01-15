@@ -28,17 +28,9 @@ import chess.model.Board;
 
 public class SimpleEngineImpl extends EngineSupport implements Engine {
 
-	final Map<Class<? extends Piece>, Double> pieceRatings = new HashMap<>();
-
 	public SimpleEngineImpl(Board board) {
 		setBoard(board);
 		this.validations = new Validations(this);
-		pieceRatings.put(Pawn.class, 1.0);
-		pieceRatings.put(Knight.class, 3.0);
-		pieceRatings.put(Bishop.class, 3.0);
-		pieceRatings.put(Rook.class, 4.0);
-		pieceRatings.put(Queen.class, 6.0);
-		pieceRatings.put(King.class, 0.0);
 	}
 
 	@Override
@@ -110,18 +102,19 @@ public class SimpleEngineImpl extends EngineSupport implements Engine {
 	}
 
 	private Iterator<ValidatedMove> getValidMovesFor(Piece piece) {
-		FilterIterator<Move, ValidatedMove> filterator = new FilterIterator<>(piece.getPossibleMoves(),
+		Filterator<Move, ValidatedMove> filterator = new Filterator<>(piece.getPossibleMoves(),
 				move -> isValid(move));
 		return filterator;
 	}
 
 	@Override
 	public List<PlayableMove> getPlayableMovesFor(Piece piece) {
-		Stream<Move> stream=StreamSupport.stream(
-				Spliterators.spliteratorUnknownSize(piece.getPossibleMoves(), Spliterator.ORDERED), false);
-		List<ValidatedMove> validatedMoves = stream.map(move->isValid(move)).filter(vm->vm!=null).collect(Collectors.toList());
+		Stream<Move> stream = StreamSupport
+				.stream(Spliterators.spliteratorUnknownSize(piece.getPossibleMoves(), Spliterator.ORDERED), false);
+		List<ValidatedMove> validatedMoves = stream.map(move -> isValid(move)).filter(vm -> vm != null)
+				.collect(Collectors.toList());
 		List<PlayableMove> playableMoves = new ArrayList<>();
-		for (ValidatedMove vm:validatedMoves) {
+		for (ValidatedMove vm : validatedMoves) {
 			makeMoveWithoutCheckingForCheck(vm);
 			boolean wouldPlayerBeCheked = isChecked(piece.getColour());
 			if (!wouldPlayerBeCheked)
@@ -136,7 +129,7 @@ public class SimpleEngineImpl extends EngineSupport implements Engine {
 		final King king = getKingOf(player);
 		return board.getPiecesFor(getOpponentOf(player)).stream().anyMatch(p -> p.canTake(king, getBoard()));
 	}
-	
+
 	@Override
 	public Piece getPieceThatChecksKing(Colour player) {
 		final King king = getKingOf(player);
@@ -147,13 +140,14 @@ public class SimpleEngineImpl extends EngineSupport implements Engine {
 		return checkers.get(0);
 	}
 
-	public double computeRatingFor(Colour player) {
+	protected double computeRatingFor(Colour player) {
+		// IDEA: maintain two variables which store ratings for both players. update
+		// them when pieces are captured.
 		// rating is [0,1] with 0 meaning he lost and 1 he won
 		// max score for pieces is 34, so: 1/34
 		// and halve that because a pat would be 0.5, so max score from pieces
 		// can't be better than a pat
-		double rating = 
-				(1.0/68.0)*board.getPiecesFor(player).stream().mapToDouble(p -> pieceRatings.get(p.getClass())).sum();
+		double rating = (1.0 / 68.0) * board.getPiecesFor(player).stream().mapToDouble(p -> p.getRatingValue()).sum();
 		return rating;
 	}
 
@@ -166,18 +160,15 @@ public class SimpleEngineImpl extends EngineSupport implements Engine {
 		// copy of pieces because MinMax will modify the piece set -> concurrent
 		// modification exception
 		List<Piece> pieces = new ArrayList<>(board.getPiecesFor(me));
-		double bestScoreForOpponent = 1.0;
-		boolean iHavePlayableMoves = false;
+		double bestScoreForOpponent = 10.0;
 		for (Piece piece : pieces) {
 			Iterator<ValidatedMove> myMoves = getValidMovesFor(piece);
-			if (!myMoves.hasNext())
-				continue;
-			for (ValidatedMove move = myMoves.next(); myMoves.hasNext(); move = myMoves.next()) {
+			while (myMoves.hasNext()) {
+				ValidatedMove move = myMoves.next();
 				makeMoveWithoutCheckingForCheck(move);
 				if (!isChecked(move.getPlayer())) {
-					iHavePlayableMoves = true;
 					SearchResult bestMoveForOpponent = getBestMoveFor(opponent, depth + 1, endOfSearch);
-					if (bestMoveForOpponent.rating <= bestScoreForOpponent) {
+					if (bestMoveForOpponent.rating < bestScoreForOpponent) {
 						bestScoreForOpponent = bestMoveForOpponent.rating;
 						myMoveThatGivesOpponentHisLowestScore = new PlayableMove(move);
 					}
@@ -185,8 +176,8 @@ public class SimpleEngineImpl extends EngineSupport implements Engine {
 				undoMove(move);
 			}
 		}
-		if (!iHavePlayableMoves) {
-			bestScoreForOpponent=isChecked(me)?1.0:0.5;
+		if (myMoveThatGivesOpponentHisLowestScore == null) {
+			bestScoreForOpponent = isChecked(me) ? 1.0 : 0.5;
 		}
 		return new SearchResult(1.0 - bestScoreForOpponent, myMoveThatGivesOpponentHisLowestScore);
 	}

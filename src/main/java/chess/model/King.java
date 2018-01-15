@@ -21,8 +21,8 @@ public class King extends Piece {
 
 	@Override
 	protected MoveProducer generateMoves() {
-		return new MoveProducer() {
-
+		return new MoveProducer(getPosition()) {
+			
 			@Override
 			int getMaxMoveCounter() {
 				return 8;
@@ -30,24 +30,23 @@ public class King extends Piece {
 
 			@Override
 			Position getDestinationPosition(int moveCounter) {
-				Position p = getPosition();
 				switch (moveCounter) {
 				case 0:
-					return p.north();
+					return startingPosition.north();
 				case 1:
-					return p.northEast();
+					return startingPosition.northEast();
 				case 2:
-					return p.east();
+					return startingPosition.east();
 				case 3:
-					return p.southEast();
+					return startingPosition.southEast();
 				case 4:
-					return p.south();
+					return startingPosition.south();
 				case 5:
-					return p.southWest();
+					return startingPosition.southWest();
 				case 6:
-					return p.west();
+					return startingPosition.west();
 				case 7:
-					return p.northWest();
+					return startingPosition.northWest();
 				default:
 					return null;
 				}
@@ -66,6 +65,11 @@ public class King extends Piece {
 		int dc = Math.abs(target.getPosition().column - getPosition().column);
 		int dr = Math.abs(target.getPosition().row - getPosition().row);
 		return dc<=1 && dr<=1;
+	}
+
+	@Override
+	public double getRatingValue() {
+		return 0;
 	}
 
 }

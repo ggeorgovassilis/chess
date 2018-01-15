@@ -23,7 +23,7 @@ public class Pawn extends Piece {
 
 	@Override
 	protected MoveProducer generateMoves() {
-		return new MoveProducer() {
+		return new MoveProducer(getPosition()) {
 
 			@Override
 			int getMaxMoveCounter() {
@@ -35,26 +35,26 @@ public class Pawn extends Piece {
 				if (colour == Colour.white) {
 					switch (moveCounter) {
 					case 0:
-						return position.north();
+						return startingPosition.north();
 					case 1:
-						return position.north().north();
+						return startingPosition.north().north();
 					case 2:
-						return position.northEast();
+						return startingPosition.northEast();
 					case 3:
-						return position.northWest();
+						return startingPosition.northWest();
 					default:
 						return null;
 					}
 				} else {
 					switch (moveCounter) {
 					case 0:
-						return position.south();
+						return startingPosition.south();
 					case 1:
-						return position.south().south();
+						return startingPosition.south().south();
 					case 2:
-						return position.southEast();
+						return startingPosition.southEast();
 					case 3:
-						return position.southWest();
+						return startingPosition.southWest();
 					default:
 						return null;
 					}
@@ -114,6 +114,11 @@ public class Pawn extends Piece {
 		// For black to take: abs(dc)=1, dr=-1, direction=-1
 		// thus abs(dc)*dr*direction == 1
 		return dc * dr * direction == 1;
+	}
+
+	@Override
+	public double getRatingValue() {
+		return 1;
 	}
 
 }
